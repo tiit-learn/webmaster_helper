@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  {% block title %}Все сайты{% endblock %}
+{% endblock %}
+
+{% block content %}
+
+{% if g.user %}
+    <div>
+        <a class="button is-success" href="{{ url_for('sites.add_site') }}">Добавить сайт</a>
+    </div>
+    <hr>
+{% endif %}
+    {% if sites %}
+        <table class="table">
+            <thead>
+                <tr>
+                    {% for title in sites[0].keys() %}
+                    <th><abbr title="{{ title }}">{{ title }}</abbr></th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                
+                    {% for site in sites %}
+                    <tr>
+                        {% for row in site %}
+                            <th>{% if row %}{{ row }}{% else %}-{% endif %}</th>
+                        {% endfor %}
+                        {% if g.user %}
+                            <th><a href="{{ url_for('sites.update', id=site.id) }}">Изменить</a></th>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+{% endblock %}

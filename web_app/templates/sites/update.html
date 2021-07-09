@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Update site{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="url">Url</label>
+    <input name="url" id="url" value="{{ request.form['url'] or site['domain'] }}">
+    <label for="category">Category</label>
+    <input name="category" id="category" value="{{ request.form['category'] or site['category'] }}">
+    <label for="notes">Note</label>
+    <textarea name="notes" id="notes">{{ request.form['notes'] or site['category'] }}</textarea>
+    <input type="submit" value="Save">
+  </form>
+  <form action="{{ url_for('sites.delete', id=site.id) }}" method="POST">
+    <input class="danger" type="submit" value="Удалить" onclick="return confirm('Удалить {{ site.domain }}?')">
+  </form>
+{% endblock %}

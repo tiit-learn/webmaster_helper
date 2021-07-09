@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} - Webmaster Helper</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://bulma.io/vendor/fontawesome-free-5.15.2-web/css/all.min.css">
+  </head>
+  <body>
+    <nav class="navbar" role="navigation" aria-label="main navigation">    
+      <div id="navbarBasicExample" class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="{{ url_for('index') }}">
+            Главная
+          </a>
+          <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link">
+              Остальное
+            </a>
+    
+            <div class="navbar-dropdown">
+              <a class="navbar-item">
+                Веб-мастеры
+              </a>
+              <a class="navbar-item">
+                Категории
+              </a>
+              <a class="navbar-item">
+                Настройки
+              </a>
+              <hr class="navbar-divider">
+              <a class="navbar-item">
+                О проекте
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <div class="buttons">
+              {% if g.user %}
+
+                
+                <a class="button" >
+                  <span class="icon">
+                    <i class="fas fa-user"></i>
+                  </span>
+                  <span>
+                    {{ g.user.user_name }}
+                  </span>
+                </a>
+                <a class="button is-danger" href="{{ url_for('auth.logout') }}">
+                  <strong>Выход</strong>
+                </a>
+              {% else %}
+                <a class="button is-primary" href="{{ url_for('auth.register') }}">
+                  <strong>Регистрация</strong>
+                </a>
+                <a class="button is-light" href="{{ url_for('auth.login') }}">
+                  Вход
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  <section class="section">
+    <div class="container">
+      <h1 class="title"> {% block header %}{% endblock %}</h1>
+      
+      {% for message in get_flashed_messages() %}
+        <div class="notification">
+          {{ message }}
+        </div>
+      {% endfor %}
+
+      {% block content %}{% endblock %}
+
+    </div>
+  </section>
+  </body>
+</html>
