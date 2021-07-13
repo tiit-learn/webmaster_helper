@@ -1,20 +1,67 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Update site{% endblock %}</h1>
+  {% block title %}Изменить сайт{% endblock %}
 {% endblock %}
 
 {% block content %}
+
   <form method="post">
-    <label for="url">Url</label>
-    <input name="url" id="url" value="{{ request.form['url'] or site['domain'] }}">
-    <label for="category">Category</label>
-    <input name="category" id="category" value="{{ request.form['category'] or site['category'] }}">
-    <label for="notes">Note</label>
-    <textarea name="notes" id="notes">{{ request.form['notes'] or site['category'] }}</textarea>
-    <input type="submit" value="Save">
+
+    <div class="field">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" placeholder="URL" name="url" id="url" value="{{ request.form['url'] or site['domain'] }}">
+          <span class="icon is-small is-left">
+            <i class="fas fa-envelope"></i>
+          </span>
+          <span class="icon is-small is-right">
+            <i class="fas fa-check"></i>
+          </span>
+        </p>
+      </div>
+
+      <div class="field">
+        <label class="label">Категория</label>
+        <div class="control">
+          <div class="select">
+            <select name="category" id="category">
+                {% for category in categories %}
+                    <option value="{{ category.name }}" {% if request.form['category'] == category.name or site['category'] == category.name %} selected {% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="control">
+          <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] or site['notes'] }}</textarea>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="control">
+          <label class="radio">
+            <input type="radio" name="published" value=1 {% if site.published %}checked{% endif %}>
+            Размещен
+          </label>
+          <label class="radio">
+            <input type="radio" name="published" value=0 {% if not site.published %}checked{% endif %}>
+            Не размещен
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <p class="control">
+          <input class="button is-success" type="submit" value="Изменить">
+        </p>
+      </div>
+
   </form>
+  <br />
   <form action="{{ url_for('sites.delete', id=site.id) }}" method="POST">
-    <input class="danger" type="submit" value="Удалить" onclick="return confirm('Удалить {{ site.domain }}?')">
+    <input class="button is-danger" type="submit" value="Удалить" onclick="return confirm('Удалить {{ site.domain }}?')">
   </form>
+
 {% endblock %}

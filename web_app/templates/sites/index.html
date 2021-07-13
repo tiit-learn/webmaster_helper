@@ -6,32 +6,71 @@
 
 {% block content %}
 
-{% if g.user %}
-    <div>
-        <a class="button is-success" href="{{ url_for('sites.add_site') }}">Добавить сайт</a>
-    </div>
-    <hr>
-{% endif %}
+    {% if g.user %}
+        <div>
+            <a class="button is-success" href="{{ url_for('sites.add_site') }}">Добавить сайт</a>
+        </div>
+        <hr>
+    {% endif %}
+
     {% if sites %}
+
+        <div class="notification is-primary is-light">
+            <h3>Доступные поля таблицы</h3>
+            <hr>
+            {% for title in sites[0].keys() %}
+                <span class="tag is-white">{{ title }}</span>
+            {% endfor %}
+        </div>    
+
         <table class="table">
             <thead>
                 <tr>
-                    {% for title in sites[0].keys() %}
-                    <th><abbr title="{{ title }}">{{ title }}</abbr></th>
-                    {% endfor %}
+                    <th>Домен</th>
+                    <th>Вебмастер</th>
+                    <th>Категория</th>
+                    <th>SEO</th>
+                    <th>Whois</th>
+                    <th>Стоимость</th>
+                    <th>Дата публикации</th>
+                    <th>Дата контакта</th>
+                    <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
                 
                     {% for site in sites %}
-                    <tr>
-                        {% for row in site %}
-                            <th>{% if row %}{{ row }}{% else %}-{% endif %}</th>
-                        {% endfor %}
-                        {% if g.user %}
-                            <th><a href="{{ url_for('sites.update', id=site.id) }}">Изменить</a></th>
-                        {% endif %}
-                    </tr>
+                        <tr>
+                            
+                                <th>{{ site.domain }}</th>
+                                <th><a href="{{ url_for('webmasters.update', id=site.webmaster_id) }}">{{ site.webmaster_name }}</a></th>
+                                <th>{{ site.category }}</th>
+                                <th>
+                                    Alexa: {{ site.alexa_rank }}<br>
+                                    Я.ИКС: {{ site.yandex_x }}
+                                </th>
+                                <th>{{ site.whois_data }}</th>
+                                <th>{{ site.price }} $</th>
+
+                                <th>
+                                    {% if site.published %}
+                                        <a href="{{ site.published_link }}">{{ site.published }}</a><br>
+                                        <span class="tag is-info is-light">{{ site.last_check }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </th>
+                                <th>{{ site.last_contact_date }}</th>
+
+                            
+
+                            {% if g.user %}
+                                <th>
+                                    <a href="{{ url_for('sites.update', id=site.id) }}">Изменить</a>
+                                    <a href="{{ url_for('sites.contact', id=site.id) }}">Связаться</a>
+                                </th>
+                            {% endif %}
+                        </tr>
                     {% endfor %}
             </tbody>
         </table>

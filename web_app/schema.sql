@@ -8,14 +8,18 @@ DROP TABLE IF EXISTS categories;
 CREATE TABLE sites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     webmaster_id INTEGER,
+    webmaster_name TEXT,
     category TEXT NOT NULL,
     domain TEXT UNIQUE NOT NULL,
+    contact_form_link TEXT,
     alexa_rank INTEGER,
     yandex_x INTEGER,
     whois_data TEXT,
-    contact_form_link TEXT,
     price INTEGER,
-    published BOOLEAN NOT NULL,
+    published DATETIME,
+    published_link TEXT,
+    last_contact_date DATETIME,
+    last_check DATETIME, 
     notes TEXT,
     FOREIGN KEY (webmaster_id) REFERENCES webmasters (id)
 );
@@ -23,7 +27,7 @@ CREATE TABLE sites (
 CREATE TABLE webmasters (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     webmaster_name TEXT,
-    contacts TEXT NOT NULL
+    contacts TEXT
 );
 
 CREATE TABLE mails (
@@ -47,3 +51,9 @@ CREATE TABLE categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
 );
+
+INSERT INTO categories VALUES(0, 'Не указано');
+INSERT INTO categories VALUES(1, 'Детский');
+INSERT INTO categories VALUES(2, 'Компьютеры');
+INSERT INTO categories VALUES(3, 'Финансы/Заработок');
+INSERT INTO categories VALUES(4, 'Онлайн кинотеатр');

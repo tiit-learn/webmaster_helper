@@ -1,68 +1,127 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  {% block title %}Добавить сайт{% endblock %}
+{% block title %}Добавить сайт{% endblock %}
 {% endblock %}
 
 {% block content %}
-  <form method="post">
-    <!-- <label for="url">Url</label>
-    <input name="url" id="url" value="{{ request.form['url'] }}">
-    <label for="category">Category</label>
-    <input name="category" id="category" value="{{ request.form['category'] }}">
-    <label for="notes">Note</label>
-    <textarea name="notes" id="notes">{{ request.form['notes'] }}</textarea>
-    <input type="submit" value="Save"> -->
+<script>
+  $(function () {
+    var availableTags = [
+      {% for category in categories %}
+              "{{category.name}}",
+    {% endfor %}
+      ];
+  $("#category").autocomplete({
+    source: availableTags
+  });
+    } );
 
-    <div class="field">
-        <p class="control has-icons-left has-icons-right">
-          <input class="input" placeholder="URL" name="url" id="url" value="{{ request.form['url'] }}">
-          <span class="icon is-small is-left">
-            <i class="fas fa-envelope"></i>
-          </span>
-          <span class="icon is-small is-right">
-            <i class="fas fa-check"></i>
-          </span>
-        </p>
-      </div>
+  function check_condition() {
+    if (document.getElementById('published_done').checked) {
+      document.getElementById('published_link').style.display = 'block';
+    } else {
+      document.getElementById('published_link').style.display = 'none';
+    }
+  }
+</script>
+<style>
+  .ui-autocomplete {
+    z-index: 9999 !important;
+  }
+</style>
+<form method="post" class="box">
 
-      <div class="field">
-        <label class="label">Категория</label>
-        <div class="control">
-          <div class="select">
-            <select name="category" id="category">
-                {% for category in categories %}
-                    <option value="{{ category.name }}">{{ category.name }}</option>
-                {% endfor %}
-            </select>
-          </div>
-        </div>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="URL" name="url" id="url" value="{{ request.form['url'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-link"></i>
+      </span>
+    </p>
+  </div>
 
-      <div class="field">
-        <div class="control">
-          <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] }}</textarea>
-        </div>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Ссылка на форму контакта" name="contact_form_link" id="contact_form_link"
+        value="{{ request.form['contact_form_link'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-share-square"></i>
+      </span>
+    </p>
+  </div>
 
-      <div class="field">
-        <div class="control">
-          <label class="radio">
-            <input type="radio" name="published" value=1>
-            Размещен
-          </label>
-          <label class="radio">
-            <input type="radio" name="published" value=0 checked>
-            Не размещен
-          </label>
-        </div>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Категория" name="category" id="category" value="{{ request.form['category'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-grip-vertical"></i>
+      </span>
+    </p>
+  </div>
 
-      <div class="field">
-        <p class="control">
-          <input class="button is-success" type="submit" value="Добавить">
-        </p>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Webmaster" name="webmaster" id="webmaster"
+        value="{{ request.form['webmaster'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-asterisk"></i>
+      </span>
+    </p>
+  </div>
 
-  </form>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Стоимость размещения статьи" name="price" id="price"
+        value="{{ request.form['price'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-dollar-sign"></i>
+      </span>
+    </p>
+  </div>
+
+  <div class="field">
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="published" id="published_done" value=1 onclick="javascript:check_condition();">
+        Размещен
+      </label>
+      <label class="radio">
+        <input type="radio" name="published" value=0 checked onclick="javascript:check_condition();">
+        Не размещен
+      </label>
+    </div>
+  </div>
+
+  <div class="field" id="published_link" style="display:none">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Страница размещения" name="published_link"
+        value="{{ request.form['published_link'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-anchor"></i>
+      </span>
+    </p>
+  </div>
+
+  <div class="field">
+    <div class="control">
+      <textarea class="textarea" placeholder="Заметки о сайте" name="notes"
+        id="notes">{{ request.form['notes'] }}</textarea>
+    </div>
+  </div>
+
+
+  <div class="field">
+    <p class="control">
+      <input class="button is-success" type="submit" value="Добавить">
+    </p>
+  </div>
+
+</form>
 {% endblock %}
+
+<label for="category">Category</label>
+<input name="category" id="category" value="{{ request.form['category'] or site['category'] }}">
+<label for="notes">Note</label>
+<textarea name="notes" id="notes">{{ request.form['notes'] or site['category'] }}</textarea>
+<input type="submit" value="Save">
