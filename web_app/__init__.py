@@ -1,5 +1,8 @@
 import os
+from datetime import datetime
+from flask.templating import render_template
 
+from jinja2.filters import FILTERS, environmentfilter
 from flask import Flask
 
 ABS_CONFIG_PATH = os.path.join(os.path.abspath('.'), 'configs')
@@ -27,19 +30,29 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # Создание простой страницы
-    @app.route('/hello')
-    def hello():
-        return 'Hello world!'
+    # Создание простой страницы  
+    @app.route('/info')
+    def about_us():
+        return render_template('info.html')
 
     from . import db
     db.init_app(app)
 
-    from . import auth, sites, webmasters
+    from . import auth, sites, webmasters, categories, configs
     app.register_blueprint(auth.bp)
     app.register_blueprint(sites.bp)
     app.register_blueprint(webmasters.bp)
+    app.register_blueprint(categories.bp)
+    app.register_blueprint(configs.bp)
 
     app.add_url_rule('/', endpoint='index')
+
+    # Custom filters
+    @environmentfilter
+    def _jinja2_filter_datetime(environment, date, fmt=r"%d/%m/%Y"):
+        format = '%Y-%m-%d %H:%M:%S.%f'
+        return datetime.strptime(date, format).strftime(fmt)
+
+    FILTERS["strftime"] = _jinja2_filter_datetime
 
     return app

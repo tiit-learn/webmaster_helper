@@ -8,8 +8,7 @@ DROP TABLE IF EXISTS categories;
 CREATE TABLE sites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     webmaster_id INTEGER,
-    webmaster_name TEXT,
-    category TEXT NOT NULL,
+    category_id INTEGER NOT NULL,
     domain TEXT UNIQUE NOT NULL,
     contact_form_link TEXT,
     alexa_rank INTEGER,
@@ -21,7 +20,8 @@ CREATE TABLE sites (
     last_contact_date DATETIME,
     last_check DATETIME, 
     notes TEXT,
-    FOREIGN KEY (webmaster_id) REFERENCES webmasters (id)
+    FOREIGN KEY (webmaster_id) REFERENCES webmasters (id),
+    FOREIGN KEY (category_id) REFERENCES categories (id)
 );
 
 CREATE TABLE webmasters (

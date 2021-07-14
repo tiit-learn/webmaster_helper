@@ -1,67 +1,131 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  {% block title %}Изменить сайт{% endblock %}
+{% block title %}Изменить сайт{% endblock %}
 {% endblock %}
 
 {% block content %}
+<script>
+  $(function () {
+    var availableCategories = [
+      {% for category in categories %}
+            "{{category.name}}",
+      {% endfor %}
+    ];
+  $("#category").autocomplete({
+    source: availableCategories
+  });
+  } );
 
-  <form method="post">
+  $(function () {
+    var availableWebmasters = [
+      {% for webmaster in webmasters %}
+            "{{webmaster.webmaster_name}}",
+      {% endfor %}
+    ];
+  $("#webmaster").autocomplete({
+    source: availableWebmasters
+  });
+  } );
 
-    <div class="field">
-        <p class="control has-icons-left has-icons-right">
-          <input class="input" placeholder="URL" name="url" id="url" value="{{ request.form['url'] or site['domain'] }}">
-          <span class="icon is-small is-left">
-            <i class="fas fa-envelope"></i>
-          </span>
-          <span class="icon is-small is-right">
-            <i class="fas fa-check"></i>
-          </span>
-        </p>
-      </div>
+  function check_condition() {
+    if (document.getElementById('published_done').checked) {
+      document.getElementById('published_link').style.display = 'block';
+    } else {
+      document.getElementById('published_link').style.display = 'none';
+    }
+  };
+</script>
 
-      <div class="field">
-        <label class="label">Категория</label>
-        <div class="control">
-          <div class="select">
-            <select name="category" id="category">
-                {% for category in categories %}
-                    <option value="{{ category.name }}" {% if request.form['category'] == category.name or site['category'] == category.name %} selected {% endif %}>{{ category.name }}</option>
-                {% endfor %}
-            </select>
-          </div>
-        </div>
-      </div>
+<form method="post">
 
-      <div class="field">
-        <div class="control">
-          <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] or site['notes'] }}</textarea>
-        </div>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="URL" name="url" id="url" value="{{ request.form['url'] or site['domain'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-link"></i>
+      </span>
+    </p>
+  </div>
 
-      <div class="field">
-        <div class="control">
-          <label class="radio">
-            <input type="radio" name="published" value=1 {% if site.published %}checked{% endif %}>
-            Размещен
-          </label>
-          <label class="radio">
-            <input type="radio" name="published" value=0 {% if not site.published %}checked{% endif %}>
-            Не размещен
-          </label>
-        </div>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Ссылка на форму контакта" name="contact_form_link" id="contact_form_link" value="{{ request.form['contact_form_link'] or site['contact_form_link']}}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-share-square"></i>
+      </span>
+    </p>
+  </div>
 
-      <div class="field">
-        <p class="control">
-          <input class="button is-success" type="submit" value="Изменить">
-        </p>
-      </div>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Категория" name="category" id="category" value="{{ request.form['category'] or site['name']}}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-grip-vertical"></i>
+      </span>
+    </p>
+  </div>
 
-  </form>
-  <br />
-  <form action="{{ url_for('sites.delete', id=site.id) }}" method="POST">
-    <input class="button is-danger" type="submit" value="Удалить" onclick="return confirm('Удалить {{ site.domain }}?')">
-  </form>
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Webmaster" name="webmaster" id="webmaster" value="{%- if request.form['webmaster'] or site['webmaster_name'] -%}
+                                                                                          {{ request.form['webmaster'] or site['webmaster_name'] }}
+                                                                                          {%- endif -%}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-asterisk"></i>
+      </span>
+    </p>
+  </div>
+
+  <div class="field">
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Стоимость размещения статьи" name="price" id="price" value="{{ request.form['price'] or site['price'] }}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-dollar-sign"></i>
+      </span>
+    </p>
+  </div>
+  
+  <div class="field">
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="published" id="published_done" value=1 onclick="javascript:check_condition();" {% if site.published %}checked{% endif %}>
+        Размещен
+      </label>
+      <label class="radio">
+        <input type="radio" name="published" value=0 onclick="javascript:check_condition();" {% if not site.published %}checked{% endif %}>
+        Не размещен
+      </label>
+    </div>
+  </div>
+
+  <div class="field" id="published_link" {% if not site.published %}style="display:none"{% endif %}>
+    <p class="control has-icons-left has-icons-right">
+      <input class="input" placeholder="Страница размещения" name="published_link"  value="{%- if request.form['published_link'] or site['published_link'] -%}
+                                                                                           {{ request.form['published_link'] or site['published_link'] }}
+                                                                                           {%- endif -%}">
+      <span class="icon is-small is-left">
+        <i class="fas fa-anchor"></i>
+      </span>
+    </p>
+  </div>
+
+  <div class="field">
+    <div class="control">
+      <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] or site['notes']}}</textarea>
+    </div>
+  </div>
+
+  <div class="field">
+    <p class="control">
+      <input class="button is-success" type="submit" value="Изменить">
+    </p>
+  </div>
+
+</form>
+<br />
+<form action="{{ url_for('sites.delete', id=site.id) }}" method="POST">
+  <input class="button is-danger" type="submit" value="Удалить" onclick="return confirm('Удалить {{ site.domain }}?')">
+</form>
 
 {% endblock %}

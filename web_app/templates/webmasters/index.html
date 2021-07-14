@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block header %}
+{% block title %}Все вебмастеры{% endblock %}
+{% endblock %}
+
+{% block content %}
+
+    {% if g.user %}
+        <div>
+            <a class="button is-success" href="{{ url_for('webmasters.add') }}">Добавить вебмастера</a>
+        </div>
+        <hr>
+    {% endif %}
+    {% if webmasters %}
+
+        <div class="notification is-primary is-light">
+            <h3>Доступные поля таблицы</h3>
+            <hr>
+            {% for title in webmasters[0].keys() %}
+            <span class="tag is-white">{{ title }}</span>
+            {% endfor %}
+        </div>
+
+        <table class="table box" id="main-table">
+            <thead>
+                <tr>
+                    <th>Имя вебмастера</th>
+                    <th>Контакты</th>
+                    {% if g.user %}
+                    <th>Действия</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+
+                {% for webmaster in webmasters %}
+                <tr>
+                    <th>
+                        {{ webmaster.webmaster_name }}
+                    </th>
+                    <th>
+                        {% if webmaster.contacts %}
+                            {{ webmaster.contacts }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </th>
+
+                    {% if g.user %}
+                    <th>
+                        <a href="#" class="button is-warning">
+                            <span class="icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </span>
+                        </a>
+                        <a href="#" class="button is-primary is-light">
+                            <span class="icon">
+                                <i class="fas fa-edit"></i>
+                            </span>
+                        </a>
+                    </th>
+                    {% endif %}
+                </tr>
+                
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            $(document).ready(function () {
+                $('#main-table').DataTable( {
+                    language: {
+                        emptyTable: "Нет данных для показа.",
+                        search: 'Поиск по таблице:',
+                        lengthMenu: "Показать _MENU_ элементов",
+                        info: "Показано _START_ до _END_ из _TOTAL_ элементов",
+                        paginate: {
+                                    first: "Первая",
+                                    last: "Последняя",
+                                    next: "Следующая",
+                                    previous: "Предыдущая"
+                                },
+                    }
+                });
+            });
+        </script>
+    {% else %}
+        <h2>Не найдены</h2>
+    {% endif %}
+{% endblock %}

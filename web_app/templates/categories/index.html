@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block header %}
+{% block title %}Все категории{% endblock %}
+{% endblock %}
+
+{% block content %}
+
+    {% if g.user %}
+        <div>
+            <a class="button is-success" href="{{ url_for('categories.add') }}">Добавить категорию</a>
+        </div>
+        <hr>
+    {% endif %}
+    {% if categories %}
+
+        <div class="notification is-primary is-light">
+            <h3>Доступные поля таблицы</h3>
+            <hr>
+            {% for title in categories[0].keys() %}
+            <span class="tag is-white">{{ title }}</span>
+            {% endfor %}
+        </div>
+
+        <table class="table box" id="main-table">
+            <thead>
+                <tr>
+                    <th>ID Категории</th>
+                    <th>Название</th>
+                    {% if g.user %}
+                    <th>Действия</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+
+                {% for category in categories %}
+                <tr>
+                    <th>
+                        {{ category.id }}
+                    </th>
+                    <th>
+                        {{ category.name }}
+                    </th>
+
+                    {% if g.user %}
+                    <th>
+                        <a href="#" class="button is-warning">
+                            <span class="icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </span>
+                        </a>
+                        <a href="#" class="button is-primary is-light">
+                            <span class="icon">
+                                <i class="fas fa-edit"></i>
+                            </span>
+                        </a>
+                    </th>
+                    {% endif %}
+                </tr>
+                
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            $(document).ready(function () {
+                $('#main-table').DataTable( {
+                    language: {
+                        emptyTable: "Нет данных для показа.",
+                        search: 'Поиск по таблице:',
+                        lengthMenu: "Показать _MENU_ элементов",
+                        info: "Показано _START_ до _END_ из _TOTAL_ элементов",
+                        paginate: {
+                                    first: "Первая",
+                                    last: "Последняя",
+                                    next: "Следующая",
+                                    previous: "Предыдущая"
+                                },
+                    }
+                });
+            });
+        </script>
+    {% else %}
+        <h2>Не найдены</h2>
+    {% endif %}
+{% endblock %}
