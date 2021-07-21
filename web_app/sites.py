@@ -1,3 +1,6 @@
+import json
+import time
+
 from datetime import datetime
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
@@ -24,8 +27,6 @@ def get_site(id):
         abort(404, f'Site {id} not found.')
     return site
 
-
-
 @bp.route('/')
 def index():
     db = get_db()
@@ -36,6 +37,14 @@ def index():
         ' ORDER BY sites.id ASC;'
     ).fetchall()
     
+    if sites:
+        sites = [dict(site) for site in sites]
+        for site in sites:
+            if site['seo_data']:
+                site['seo_data'] = json.loads(site['seo_data'])
+            if site['whois_data']:
+                site['whois_data'] = json.loads(site['whois_data'])
+
     return render_template('sites/index.html', sites=sites)
 
 @bp.route('/add-site', methods=('GET', 'POST'))
@@ -48,7 +57,7 @@ def add_site():
         contact_form_link = functions.remove_http(request.form['contact_form_link'])
         price = request.form['price']
         notes = request.form['notes']
-        published = datetime.now() if request.form['published'] == '1' else None
+        published = time.time() if request.form['published'] == '1' else None
         published_link = functions.remove_http(request.form['published_link']) if request.form['published'] == '1' else None
         webmaster_name = request.form['webmaster'] if request.form['webmaster'] else None
         webmaster_id = get_webmaster_id(request.form['webmaster'].strip()) if webmaster_name else None
@@ -80,7 +89,7 @@ def add_site():
     webmasters = get_db().execute(
             'SELECT * FROM webmasters'
         )
-    return render_template('sites/add_site.html', categories=categories, webmasters=webmasters)
+    return render_template('sites/add_site.html', site={}, categories=categories, webmasters=webmasters)
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
@@ -88,13 +97,21 @@ def update(id):
     site = get_site(id)
     
     if request.method == 'POST':
+
+        if request.form['published'] == '1' and request.form['published_date']:
+            published = datetime.strptime(request.form['published_date'], r'%d/%m/%Y').timestamp()
+        elif request.form['published'] == '1' and not request.form['published_date']:
+            published = time.time()
+        else:
+            published = None
+
         url = functions.remove_http(request.form['url'])
         category = request.form['category'].strip()
         category_id = get_category_id(category)
         contact_form_link = functions.remove_http(request.form['contact_form_link'])
-        price = request.form['price']
-        notes = request.form['notes']
-        published = datetime.now() if request.form['published'] == '1' else None
+        price = request.form['price'] if request.form['price'] != 'None' else None
+        notes = request.form['notes'] if request.form['notes'] != 'None' else None
+        
         published_link = functions.remove_http(request.form['published_link']) if request.form['published'] == '1' else None
         webmaster_name = request.form['webmaster'] if request.form['webmaster'] else None
         webmaster_id = get_webmaster_id(request.form['webmaster'].strip()) if webmaster_name else None
@@ -112,9 +129,9 @@ def update(id):
             db.execute(
                 'UPDATE sites SET domain = ?, category_id = ?, notes = ?, published = ?,'
                 'contact_form_link = ?, price = ?, webmaster_id = ?,'
-                'published_link = ?'
+                'published_link = ?, published = ?'
                 'WHERE id = ?', (url, category_id, notes, published, contact_form_link, price,
-                 webmaster_id, published_link, id)
+                 webmaster_id, published_link, published, id)
             )
             db.commit()
             return redirect(url_for('sites.index'))
@@ -146,3 +163,4 @@ def contact(id):
     if not site or (not site['contact_form_link']) and (not site['webmaster_id']):
         abort(404, f'Contacts for ({id}) not found.')
     return render_template('sites/contact.html', site=site)
+

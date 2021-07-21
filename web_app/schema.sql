@@ -11,8 +11,7 @@ CREATE TABLE sites (
     category_id INTEGER NOT NULL,
     domain TEXT UNIQUE NOT NULL,
     contact_form_link TEXT,
-    alexa_rank INTEGER,
-    yandex_x INTEGER,
+    seo_data TEXT,
     whois_data TEXT,
     price INTEGER,
     published DATETIME,
@@ -52,8 +51,4 @@ CREATE TABLE categories (
     name TEXT NOT NULL
 );
 
-INSERT INTO categories VALUES(0, 'Не указано');
-INSERT INTO categories VALUES(1, 'Детский');
-INSERT INTO categories VALUES(2, 'Компьютеры');
-INSERT INTO categories VALUES(3, 'Финансы/Заработок');
-INSERT INTO categories VALUES(4, 'Онлайн кинотеатр');
+INSERT INTO categories VALUES(0, '');

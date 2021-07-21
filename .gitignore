@@ -141,3 +141,15 @@ dmypy.json
 *.*sql
 *.*sqlite
 !schema.sql
+
+# Exe files
+*.exe
+
+# proxies files
+proxies.txt
+
+# test
+test*
+
+# VSCode files
+.vscode

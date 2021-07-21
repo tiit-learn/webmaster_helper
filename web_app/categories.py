@@ -36,7 +36,7 @@ def index():
     categories = db.execute(
         'SELECT * FROM categories'
     ).fetchall()
-    return render_template('categories/index.html', categories=categories)
+    return render_template('categories/index.html', categories=categories[1:])
 
 @bp.route('/add', methods=('POST', 'GET'))
 def add():

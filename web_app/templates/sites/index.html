@@ -23,32 +23,30 @@
     {% endfor %}
 </div>
 
-{% for test in test %}
-{{ test[1] }}
-{% endfor %}
-
 <table class="table box" id="main-table">
     <thead>
         <tr>
             <th>Домен</th>
+            <th>Кат</th>
             <th>Вебмастер</th>
-            <th>Категория</th>
             <th>SEO</th>
+            <th>Метрики</th>
             <th>Whois</th>
             <th>Стоимость</th>
             <th>Дата публикации</th>
             <th>Дата контакта</th>
+
             {% if g.user %}
             <th>Действия</th>
             {% endif %}
         </tr>
     </thead>
-    <tbody>
+    <tbody class="is-size-7">
 
         {% for site in sites %}
         <tr>
 
-            <th>
+            <th style="max-width: 130px; overflow-wrap: break-word;">
                 {{ site.domain }}
                 {% if site.contact_form_link %}
                 <a href="https://{{ site.contact_form_link }}" target="_blank">
@@ -57,33 +55,60 @@
                     </span>
                 </a>
                 {% endif %}
+                <br>
+                <a href="{{ url_for('categories.update', id=site.category_id) }}">{{ site.name }}</a><br>
+                
+
             </th>
-            <th>
+            <th style="max-width: 100px; overflow-wrap: break-word;">
+                {% if site.seo_data.simularweb %}{{site.seo_data.simularweb.data.Category}}{% endif %}
+            </th>
+            <th style="max-width: 50px; overflow-wrap: break-word;">
                 {% if site.webmaster_name %}
                 <a href="{{ url_for('webmasters.update', id=site.webmaster_id) }}">{{ site.webmaster_name }}</a>
             </th>
             {% else %}
             -
             {% endif %}
-            <th>
-                <a href="{{ url_for('categories.update', id=site[-2]) }}">{{ site.name }}</a> 
-            </th>
-            <th>
-                {% if site.alexa_rank %}
-                Alexa: {{ site.alexa_rank }}
-                {% else %}
-                -
-                {% endif %}<br>
-
-                {% if site.yandex_x %}
-                Я.ИКС: {{ site.yandex_x }}
+            <th style="min-width: 150px; overflow-wrap: break-word;">
+                {% if site.seo_data %}
+                    <ul>                    
+                        {% if site.seo_data.simularweb and site.seo_data.simularweb.data %}<li class="is-size-7">Simularweb GR: {{site.seo_data.simularweb.data.GlobalRank[0]}}</li>{% endif %}
+                        {% if site.seo_data.alexa and site.seo_data.alexa.data %}<li class="is-size-7">Alexa GR: {{site.seo_data.alexa.data.rank.global}}</li>{% endif %}
+                        {% if site.seo_data.moz and site.seo_data.moz.data %}<li class="is-size-7">MOZ DA: {{site.seo_data.moz.data.da}}</li>{% endif %}
+                        {% if site.seo_data.yandex_x and site.seo_data.yandex_x.data.quality%}<li class="is-size-7">Яндекс ИКС: {{site.seo_data.yandex_x.data.quality.achievements[-1].sqi}}</li>{% endif %}
+                    </ul>
                 {% else %}
                 -
                 {% endif %}
             </th>
             <th>
+                {% if site.seo_data.simularweb and site.seo_data.simularweb.data %}
+                {{ (site.seo_data.simularweb.data.EngagementsSimilarweb.TotalLastMonthVisits / 30) | round | int }}
+                ({{ site.seo_data.simularweb.data.EngagementsSimilarweb.BounceRate }})
+                <br>
+                {{ site.seo_data.simularweb.data.EngagementsSimilarweb.PageViews | round(2) }}
+                {{ site.seo_data.simularweb.data.EngagementsSimilarweb.TimeOnSite }}
+                <ul>
+                    {% for source, value in (site.seo_data.simularweb.data.TrafficSources.items() | sort(attribute='1', reverse=true))[:3]  %}
+                        <li class="is-size-7">- {{ source }} - {{ (site.seo_data.simularweb.data.TrafficSources[source]*100) | round | int}}%</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </th>
+            <th style="max-width: 150px; overflow-wrap: break-word;">
                 {% if site.whois_data %}
-                {{ site.whois_data }}
+                    <div class="has-addons"><span class="tag is-warning is-light">{{ site.whois_data.create_date[0] | convert_to_date }}</span><span class="tag is-primary is-light">{{ site.whois_data.create_date[0] | get_date_diff }} д.</span></div>
+                    <br>    
+                    </div>
+                        {% for ns in (site.whois_data.name_servers | sort)[:2] %}
+                            <span class="tag is-light">{{ ns }}</span>
+                        {% endfor %}
+                    <br>    
+                    </div>
+                    <br> 
+                    <span>{{ site.whois_data.emails[0] }}</span>
+                    
                 {% else %}
                 -
                 {% endif %}
@@ -94,6 +119,7 @@
                 {% else %}
                 -
                 {% endif %}
+            </th>
             <th>
                 {% if site.published %}
                 <a href="https://{{ site.published_link }}">{{ site.published | strftime }}</a><br>
@@ -113,9 +139,6 @@
                 -
                 {% endif %}
             </th>
-
-
-
             {% if g.user %}
             <th>
                 {% if site.contact_form_link or site.webmaster_name %}
@@ -151,7 +174,9 @@
                             next: "Следующая",
                             previous: "Предыдущая"
                         },
-            }
+            },
+            order: [],
+
         });
     });
 </script>
