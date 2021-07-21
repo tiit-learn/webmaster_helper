@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+
+from datetime import datetime, timedelta
 from flask.templating import render_template
 
 from jinja2.filters import FILTERS, environmentfilter
@@ -29,30 +30,60 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-
     # Создание простой страницы  
     @app.route('/info')
     def about_us():
         return render_template('info.html')
 
-    from . import db
+    from . import db, funcs
     db.init_app(app)
+    funcs.get_data(app)
 
-    from . import auth, sites, webmasters, categories, configs
+    from . import auth, webmasters, sites, categories, configs, funcs
     app.register_blueprint(auth.bp)
     app.register_blueprint(sites.bp)
     app.register_blueprint(webmasters.bp)
     app.register_blueprint(categories.bp)
     app.register_blueprint(configs.bp)
+    app.register_blueprint(funcs.bp)
 
     app.add_url_rule('/', endpoint='index')
 
     # Custom filters
     @environmentfilter
-    def _jinja2_filter_datetime(environment, date, fmt=r"%d/%m/%Y"):
-        format = '%Y-%m-%d %H:%M:%S.%f'
-        return datetime.strptime(date, format).strftime(fmt)
+    def _jinja2_filter_datetime(_, date, fmt=r"%d/%m/%Y"):
+        return datetime.fromtimestamp(int(date)).strftime(fmt)
+    
+    @environmentfilter
+    def _jinja2_filter_date_convert(_, date, fmt=r"%d/%m/%Y"):
+        if date:
+            if 't' in date:
+                date = date.split('t')
+            else:
+                date = date.split()
+            format = '%Y-%m-%d'
+            date = datetime.strptime(date[0], format)
+            return date.strftime(fmt)
+        return date
+
+    @environmentfilter
+    def _jinja2_filter_date_diff(_, date, fmt=r"%d/%m/%Y"):
+        if date:
+            if 't' in date:
+                date = date.split('t')
+            else:
+                date = date.split()
+            format = '%Y-%m-%d'
+            
+            date = datetime.strptime(date[0], format)
+            date_now = datetime.now()
+            days = date_now-date
+
+            return days.days
+        return date
 
     FILTERS["strftime"] = _jinja2_filter_datetime
+    FILTERS["convert_to_date"] = _jinja2_filter_date_convert
+    FILTERS["get_date_diff"] = _jinja2_filter_date_diff
 
     return app
