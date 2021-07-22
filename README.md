@@ -9,9 +9,9 @@ changes.
 DONE:
 - [x] Registration / Authorization system
 - [x] Store data in SQLite database
+- [x] Async get seo data for sites
 
 TODO:
-- [ ] Async get seo data for sites
 - [ ] Send mails from system
 - [ ] Checking adv status in site
 
@@ -20,3 +20,5 @@ TODO:
 - Python 3.7+
 - Flask
 - SQLite
+- pyppeteer
+- Bulma / jquery

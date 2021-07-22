@@ -15,19 +15,19 @@
 
 {% if sites %}
 
-<div class="notification is-primary is-light">
+<!-- <div class="notification is-primary is-light">
     <h3>Доступные поля таблицы</h3>
     <hr>
     {% for title in sites[0].keys() %}
     <span class="tag is-white">{{ title }}</span>
     {% endfor %}
-</div>
+</div> -->
 
 <table class="table box" id="main-table">
     <thead>
         <tr>
             <th>Домен</th>
-            <th>Кат</th>
+            <!-- <th>Кат</th> -->
             <th>Вебмастер</th>
             <th>SEO</th>
             <th>Метрики</th>
@@ -44,7 +44,15 @@
     <tbody class="is-size-7">
 
         {% for site in sites %}
-        <tr>
+        <tr class="{%- if site.last_contact_date.status == 'pending' -%}
+                    has-background-warning-light
+                   {%- elif site.last_contact_date.status == 'publishing' -%}
+                    has-background-primary-light
+                   {%- elif site.last_contact_date.status == 'bad_condition' -%}
+                    has-background-danger-light
+                   {%- elif site.last_contact_date.status == 'not_publishing' -%}
+                    has-background-danger-dark
+                   {%- endif -%}">
 
             <th style="max-width: 130px; overflow-wrap: break-word;">
                 {{ site.domain }}
@@ -60,9 +68,9 @@
                 
 
             </th>
-            <th style="max-width: 100px; overflow-wrap: break-word;">
+            <!-- <th style="max-width: 100px; overflow-wrap: break-word;">
                 {% if site.seo_data.simularweb %}{{site.seo_data.simularweb.data.Category}}{% endif %}
-            </th>
+            </th> -->
             <th style="max-width: 50px; overflow-wrap: break-word;">
                 {% if site.webmaster_name %}
                 <a href="{{ url_for('webmasters.update', id=site.webmaster_id) }}">{{ site.webmaster_name }}</a>
@@ -132,9 +140,10 @@
                 -
                 {% endif %}
             </th>
-            <th>
+            <th id='notes_tooltip'>
                 {% if site.last_contact_date %}
-                {{ site.last_contact_date }}
+                    {{ site.last_contact_date.date | strftime  }}<br>
+                    ({{ site.last_contact_date.status }})
                 {% else %}
                 -
                 {% endif %}

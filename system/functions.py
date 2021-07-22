@@ -42,6 +42,38 @@ def get_browser(_async=False):
 
     return asession
 
+async def get_pyppe():
+    from pyppeteer import launch
+    from pyppeteer_stealth import stealth
+
+    if os.getenv('PROXY_WORK') and os.getenv('PROXIE_DOMAIN'):
+        proxy = True
+        proxy_domain = 'http://%s:%s' % (os.getenv('PROXIE_DOMAIN'),
+                                        os.getenv('PROXIE_PORT'))
+        setup_proxy_link = f'--proxy-server={proxy_domain}'
+    browser = await launch({"headless": True,
+                            'args': ['' if not proxy else setup_proxy_link,
+                                    '--start-maximized',
+                                    '--disable-setuid-sandbox',
+                                    '--disable-infobars',
+                                    '--window-position=0,0',
+                                    '--ignore-certifcate-errors',
+                                    '--ignore-certifcate-errors-spki-list',
+                                    '--lang=en-EN']})
+
+    page = await browser.newPage()
+    await stealth(page)
+    await page.setUserAgent(Headers(headers=False).generate()['User-Agent'])
+
+    if os.getenv('PROXY_WORK') and all((os.getenv('PROXIE_USERNAME'),
+                                    os.getenv('PROXIE_PASSWORD'))):
+        await page.authenticate({
+            'username': os.getenv('PROXIE_USERNAME'),
+            'password': os.getenv('PROXIE_PASSWORD')
+            })
+    return page
+
+
 def check_url(url):
     """
     Функция проверки URL. Если, после разбивки строки, полученный список
@@ -125,7 +157,7 @@ def get_whois(url, whois_data):
             """
                 Linux 'whois' command wrapper
             """
-            result = subprocess.Popen(['whois', '.'.join(dl)],
+            result = subprocess.Popen(['whois', '.'.join(url)],
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         if result.returncode != 0 and result.returncode != 1:
@@ -177,7 +209,6 @@ async def get_seo_data(url_data):
             if not result.get('alexa') or (result.get('alexa') and
                             (time.time() - result['alexa']['timedata'] > 864000)):
                 try:
-                    await asyncio.sleep(random.randint(1,5))
                     response = await asession.get("https://alexa.com/siteinfo/" + url)
                 except Exception as err:
                     print('Ошибка %s:' % url, err)
@@ -198,51 +229,38 @@ async def get_seo_data(url_data):
         async def get_simularweb():
             if not result.get('simularweb') or (result.get('simularweb') and (time.time() - result['simularweb']['timedata'] > 864000)):
                 pattern = r'// lazy loader|//siteInfo: true,'
+                _url = "https://www.similarweb.com/ru/website/" + url
+
+                page = await get_pyppe()
                 try:
-                    response = await asession.get("https://www.similarweb.com/ru/website/" + url)
+                    await page.goto(_url)
                 except Exception as err:
-                    print('Ошибка %s:' % url, err)
+                    print('Ошибка %s:' % _url, err)
                 else:
-                    script = response.html.xpath('//script[contains(text(),"Sw.preloadedData")]', first=True)
-                    print(url, response.html.find('title', first=True).text)
+                    title = await page.title()
+                    print(title)
+                    html = await page.evaluate('document.documentElement.outerHTML', force_expr=True)
+                    html = requests_html.HTML(html=html, async_=True)
+                    script = html.xpath('//script[contains(text(),"Sw.preloadedData")]', first=True)
+
                     if script:
+                        print(url, title)
                         script = 'let Sw = []; ' + re.sub(pattern, '', script.text) + ' Sw.preloadedData.overview'
                         html = requests_html.HTML(html=doc, async_=True)
                         val = await html.arender(script=script, reload=False)
                         result['simularweb'] = {'data': val, 'timedata': time.time()}
                     else:
+                        print(title, '- NOT FOUND')
                         result['simularweb'] = {'data': None, 'timedata': time.time()}
+                finally:
+                    await page.close()
 
         async def get_moz():
-            from pyppeteer import launch
             if not result.get('moz') or (result.get('moz') and (time.time() - result['moz']['timedata'] > 864000)):
 
                 _url = "https://moz.com/domain-analysis?site=" + url
 
-                if os.getenv('PROXY_WORK') and os.getenv('PROXIE_DOMAIN'):
-                    proxy = True
-                    proxy_domain = 'http://%s:%s' % (os.getenv('PROXIE_DOMAIN'),
-                                                    os.getenv('PROXIE_PORT'))
-                    setup_proxy_link = f'--proxy-server={proxy_domain}'
-                browser = await launch({"headless": True,
-                                        'args': ['' if not proxy else setup_proxy_link,
-                                                '--start-maximized',
-                                                '--disable-setuid-sandbox',
-                                                '--disable-infobars',
-                                                '--window-position=0,0',
-                                                '--ignore-certifcate-errors',
-                                                '--ignore-certifcate-errors-spki-list',
-                                                '--lang=ru-RU']})
-
-                page = await browser.newPage()
-                await page.setUserAgent(Headers(headers=False).generate()['User-Agent'])
-
-                if os.getenv('PROXY_WORK') and all((os.getenv('PROXIE_USERNAME'),
-                                                os.getenv('PROXIE_PASSWORD'))):
-                    await page.authenticate({
-                        'username': os.getenv('PROXIE_USERNAME'),
-                        'password': os.getenv('PROXIE_PASSWORD')
-                        })
+                page = await get_pyppe()
                 try:
                     await page.goto(_url)
                 except Exception as err:
@@ -269,7 +287,7 @@ async def get_seo_data(url_data):
                     else:
                         result['moz'] = {'data': None, 'timedata': time.time()}
                 finally:
-                    await browser.close()
+                    await page.close()
         
         async def yandex_x():
             if not result.get('yandex_x') or (result.get('yandex_x') and (time.time() - result['yandex_x']['timedata'] > 864000)):

@@ -44,6 +44,8 @@ def index():
                 site['seo_data'] = json.loads(site['seo_data'])
             if site['whois_data']:
                 site['whois_data'] = json.loads(site['whois_data'])
+            if site['last_contact_date']:
+                site['last_contact_date'] = json.loads(site['last_contact_date'])
 
     return render_template('sites/index.html', sites=sites)
 
@@ -57,28 +59,52 @@ def add_site():
         contact_form_link = functions.remove_http(request.form['contact_form_link'])
         price = request.form['price']
         notes = request.form['notes']
-        published = time.time() if request.form['published'] == '1' else None
+        
+        if request.form['published'] == '1' and request.form['published_date']:
+            published = datetime.strptime(request.form['published_date'], r'%d/%m/%Y').timestamp()
+        elif request.form['published'] == '1' and not request.form['published_date']:
+            published = time.time()
+        else:
+            published = None
+
         published_link = functions.remove_http(request.form['published_link']) if request.form['published'] == '1' else None
         webmaster_name = request.form['webmaster'] if request.form['webmaster'] else None
         webmaster_id = get_webmaster_id(request.form['webmaster'].strip()) if webmaster_name else None
+
+        if request.form['last_contact_status'] == '1' and request.form['contact_date']:
+            last_contact_date = datetime.strptime(request.form['contact_date'], r'%d/%m/%Y').timestamp()
+        elif request.form['last_contact_status'] == '1' and not request.form['contact_date']:
+            last_contact_date = time.time()
+        else:
+            last_contact_date = None
+        
+        last_contact_date_status = request.form['contact_status'] if last_contact_date else None
+        last_contact_date = json.dumps({
+            'date': last_contact_date,
+            'status': last_contact_date_status
+        }) if last_contact_date else None
+
         error = None
+
+        db = get_db()
 
         if not functions.check_url(url):
             error = 'URL is require.'
         elif not category:
             error = 'CATEGORY is require.'
-        
+        elif db.execute('SELECT domain FROM sites WHERE domain=?', (url,)).fetchone():
+            error = f'This site ({url.upper()}) already exist.'
+
         if error is not None:
             flash(error)
         else:
-            db = get_db()
             db.execute(
                 'INSERT INTO sites (domain, category_id, notes,'
                 'published, contact_form_link, price, webmaster_id,'
-                'published_link)'
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                'published_link, last_contact_date)'
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (url, category_id, notes, published, contact_form_link, price,
-                 webmaster_id, published_link)
+                 webmaster_id, published_link, last_contact_date)
             )
             db.commit()
             return redirect(url_for('sites.index'))
@@ -89,11 +115,12 @@ def add_site():
     webmasters = get_db().execute(
             'SELECT * FROM webmasters'
         )
-    return render_template('sites/add_site.html', site={}, categories=categories, webmasters=webmasters)
+    return render_template('sites/add_site.html', site={'last_contact_date': None}, categories=categories, webmasters=webmasters)
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
 def update(id):
+
     site = get_site(id)
     
     if request.method == 'POST':
@@ -111,27 +138,44 @@ def update(id):
         contact_form_link = functions.remove_http(request.form['contact_form_link'])
         price = request.form['price'] if request.form['price'] != 'None' else None
         notes = request.form['notes'] if request.form['notes'] != 'None' else None
-        
         published_link = functions.remove_http(request.form['published_link']) if request.form['published'] == '1' else None
         webmaster_name = request.form['webmaster'] if request.form['webmaster'] else None
         webmaster_id = get_webmaster_id(request.form['webmaster'].strip()) if webmaster_name else None
+        
+        if request.form['last_contact_status'] == '1' and request.form['contact_date']:
+            last_contact_date = datetime.strptime(request.form['contact_date'], r'%d/%m/%Y').timestamp()
+        elif request.form['last_contact_status'] == '1' and not request.form['contact_date']:
+            last_contact_date = time.time()
+        else:
+            last_contact_date = None
+
+        last_contact_date_status = request.form['contact_status'] if last_contact_date else None
+        last_contact_date = json.dumps({
+            'date': last_contact_date,
+            'status': last_contact_date_status
+        }) if last_contact_date else None
+        
         error = None 
+
+        db = get_db()
 
         if not url:
             error = 'URL is require.'
         elif not category:
             error = 'Category is require.'
+        elif db.execute('SELECT domain FROM sites WHERE domain=? AND id != ?', (url,id)).fetchone():
+            error = f'This site ({url.upper()}) already exist.'
 
         if error is not None:
             flash(error)
         else:
-            db = get_db()
+            
             db.execute(
                 'UPDATE sites SET domain = ?, category_id = ?, notes = ?, published = ?,'
                 'contact_form_link = ?, price = ?, webmaster_id = ?,'
-                'published_link = ?, published = ?'
+                'published_link = ?, published = ?, last_contact_date = ?'
                 'WHERE id = ?', (url, category_id, notes, published, contact_form_link, price,
-                 webmaster_id, published_link, published, id)
+                 webmaster_id, published_link, published, last_contact_date, id)
             )
             db.commit()
             return redirect(url_for('sites.index'))
@@ -141,6 +185,15 @@ def update(id):
     webmasters = get_db().execute(
             'SELECT * FROM webmasters'
         )
+
+    if site:
+        site = dict(site)
+        if site['seo_data']:
+            site['seo_data'] = json.loads(site['seo_data'])
+        if site['whois_data']:
+            site['whois_data'] = json.loads(site['whois_data'])
+        if site['last_contact_date']:
+            site['last_contact_date'] = json.loads(site['last_contact_date'])
     return render_template('sites/update.html', site=site,
                             categories=categories,
                             webmasters=webmasters)
@@ -158,7 +211,7 @@ def delete(id):
 @login_required
 def contact(id):
     site = get_db().execute(
-        'SELECT * FROM sites WHERE id == ?', (id,)
+        'SELECT * FROM sites WHERE id = ?', (id,)
     ).fetchone()
     if not site or (not site['contact_form_link']) and (not site['webmaster_id']):
         abort(404, f'Contacts for ({id}) not found.')

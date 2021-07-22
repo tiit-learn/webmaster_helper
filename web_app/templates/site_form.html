@@ -6,24 +6,45 @@
               "{{category.name}}",
         {% endfor %}
       ];
-    $("#category").autocomplete({
-      source: availableCategories
+        $("#category").autocomplete({
+        source: availableCategories,
+        minLength: 0
+        }).focus(function(){            
+                $(this).data("autocomplete").search($(this).val());
+            });
     });
-    } );
   
     $(function () {
       var availableWebmasters = [
-        {% for webmaster in webmasters %}
+        {% for webmaster in webmasters%}
               "{{webmaster.webmaster_name}}",
         {% endfor %}
       ];
     $("#webmaster").autocomplete({
-      source: availableWebmasters
-    });
+      source: availableWebmasters,
+      minLength: 0
+    }).focus(function(){            
+                $(this).data("autocomplete").search($(this).val());
+            });
     } );
   
     $( function() {
-      $( "#datepicker" ).datepicker();
+      $( "#datepicker" ).datepicker( { 
+          dateFormat: "dd/mm/yy",
+          beforeShow: function() {
+            setTimeout(function(){
+                $('.ui-datepicker').css('z-index', 9999);
+            }, 0);
+        }
+        } );
+        $( "#datepicker_contact" ).datepicker( { 
+          dateFormat: "dd/mm/yy",
+          beforeShow: function() {
+            setTimeout(function(){
+                $('.ui-datepicker').css('z-index', 9999);
+            }, 0);
+        }
+        } );
     } );
   
     function check_condition() {
@@ -34,6 +55,15 @@
         document.getElementById('published_link').style.display = 'none';
         document.getElementById('published_date').style.display = 'none';
       }
+
+      if (document.getElementById('last_contact_status').checked) {
+        document.getElementById('contact_date').style.display = 'block';
+        document.getElementById('contact_status').style.display = 'inline-block';
+      } else {
+        document.getElementById('contact_date').style.display = 'none';
+        document.getElementById('contact_status').style.display = 'none';
+      }
+      
     };
   </script>
   
@@ -99,7 +129,7 @@
       </div>
     </div>
   
-    <div class="field" id="published_date" {% if not site.published %}style="display:none"{% endif %}>
+    <div class="field" id="published_date" style="{% if not site.published %}display:none{% endif %}">
       <p class="control has-icons-left has-icons-right">
         <input class="input" placeholder="Дата размещения" name="published_date" id="datepicker" value="{%- if site['published'] -%}
                                                                                                         {{ site.published | strftime }}
@@ -120,7 +150,40 @@
         </span>
       </p>
     </div>
-  
+
+    <div class="field">
+        <div class="control">
+          <label class="radio">
+            <input type="radio" name="last_contact_status" id="last_contact_status" value=1 onclick="javascript:check_condition();" {% if site.last_contact_date %}checked{% endif %}>
+            Связался
+          </label>
+          <label class="radio">
+            <input type="radio" name="last_contact_status" value=0 onclick="javascript:check_condition();" {% if not site.last_contact_date %}checked{% endif %}>
+            Не связался
+          </label>
+        </div>
+    </div>
+
+    <div class="field" id="contact_date" style="{% if not site.last_contact_date %}display:none{% endif %}">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" placeholder="Дата контакта" name="contact_date" id="datepicker_contact" value="{%- if site['last_contact_date'] -%}
+                                                                                                          {{ site.last_contact_date.date | strftime }}
+                                                                                                          {%- endif -%}">
+          <span class="icon is-small is-left">
+            <i class="fas fa-calendar-alt"></i>
+          </span>
+        </p>
+    </div>
+
+    <div class="field select" id="contact_status" style="{% if not site.last_contact_date %}display:none{% endif %}">
+      <select name="contact_status">
+        <option value="pending" {% if site.last_contact_date.status == 'pending' %}selected{% endif %}>Ожидаю ответ</option>
+        <option value="publishing" {% if site.last_contact_date.status == 'publishing' %}selected{% endif %}>Размещает</option>
+        <option value="bad_condition" {% if site.last_contact_date.status == 'bad_condition' %}selected{% endif %}>Плохие условия</option>
+        <option value="not_publishing" {% if site.last_contact_date.status == 'not_publishing' %}selected{% endif %}>Не размещает</option>
+      </select>
+    </div>
+
     <div class="field">
       <div class="control">
         <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] or site['notes']}}</textarea>
@@ -134,4 +197,5 @@
     </div>
   
   </form>
+  </script>
   {% endblock %}

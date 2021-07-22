@@ -16,7 +16,7 @@ CREATE TABLE sites (
     price INTEGER,
     published DATETIME,
     published_link TEXT,
-    last_contact_date DATETIME,
+    last_contact_date TEXT,
     last_check DATETIME, 
     notes TEXT,
     FOREIGN KEY (webmaster_id) REFERENCES webmasters (id),
