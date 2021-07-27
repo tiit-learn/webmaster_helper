@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-{% include 'site_form.html' %}
+{% include 'sites/site_form.html' %}
 <br />
 <form action="{{ url_for('sites.delete', id=site.id) }}" method="POST">
   <input class="button is-danger" type="submit" value="Удалить" onclick="return confirm('Удалить {{ site.domain }}?')">

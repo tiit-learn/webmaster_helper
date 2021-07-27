@@ -1,0 +1,107 @@
+{% block form %}
+<form method="post">
+    <div id=app>
+        <div class="field">
+            <p class="control has-icons-left has-icons-right">
+                <input class="input" placeholder="Имя вебмастера" name="webmaster_name" id="webmaster_name" value="{{ request.form['webmaster_name'] or webmaster['webmaster_name'] }}">
+                <span class="icon is-small is-left">
+                <i class="fas fa-user-check"></i>
+                </span>
+            </p>
+        </div>
+
+        <div class="field is-hidden	">
+            <input class="input" name="contact_info" type="text" value='Контактная информация'>
+        </div>
+        <div class="field">
+                <div class="field has-addons" v-for="(input,k) in inputs" :key="k">
+                    <p class="control">
+                    <span class="select">
+                        <select v-model="input.contact_type">
+                            <option value='none' disabled>Доступные вырианты:</option>
+                            <option value='mail'>- Mail</option>
+                            <option value='telegram'>- Telegram</option>
+                            <option value='skype'>- Skype</option>
+                            <option value='phone'>- Телефон</option>
+                            <option value='other'>Другое...</option>
+                        </select>
+                    </span>
+                    </p>
+                    <p class="control is-expanded">
+                        <input class="input" type="text" placeholder="Контактная информация" v-model="input.contact">
+                    </p>
+                    <p class="control">
+                        <a class="button is-danger" @click="remove(k)" v-show="k || ( !k && inputs.length > 1)">
+                            <span class="icon is-small">
+                                <i class="fas fa-times-circle"></i>
+                            </span>
+                        </a>
+                        <a class="button is-success"  @click="add(k)" v-show="k == inputs.length-1">
+                            <span class="icon is-small">
+                                <i class="fas fa-plus-circle"></i>
+                            </span>
+                        </a>
+                    </p>
+                </div>
+        </div>
+        
+        <div class="field">
+            <p class="control">
+              <input @click="submit" class="button is-success" type="submit" value="Изменить">
+            
+            <a href="{{ url_for('webmasters.delete', id=webmaster.id) }}" class="button is-danger" onclick="return confirm('Удалить вебмастера: {{ webmaster.webmaster_name }}?')">
+                <span class="icon">
+                    <i class="fas fa-trash-alt"></i>
+                </span>
+            </a>
+        </p>
+        </div>
+    </div>
+</form>
+
+<script>
+new Vue({
+  el: '#app',
+  delimiters: ['[[', ']]'],
+
+  data: {
+      inputs: [
+      {%- if not webmaster.contacts -%}
+      {
+        contact: '',
+        contact_type: 'none'
+      }
+      {%- else -%}
+      
+        {%- for element in webmaster.contacts|to_json -%}
+        {
+            contact: '{{element.contact}}',
+            contact_type: '{{element.contact_type}}'
+        },
+        {%- endfor -%}
+      {%- endif -%}
+      ]
+    },
+
+  methods: {
+    add () {
+      this.inputs.push({
+        contact: '',
+        contact_type: 'none'
+      })
+    },
+
+    remove (index) {
+      this.inputs.splice(index, 1)
+    },
+
+    submit() {
+        const data = this.inputs;
+        document.getElementsByName('contact_info')[0].value = JSON.stringify(data, null, 2);
+    }
+  }
+})
+
+</script>
+
+{% endblock %}

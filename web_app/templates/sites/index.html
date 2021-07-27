@@ -37,7 +37,7 @@
             <th>Дата контакта</th>
 
             {% if g.user %}
-            <th>Действия</th>
+            <th style="min-width: 110px">Действия</th>
             {% endif %}
         </tr>
     </thead>
@@ -160,6 +160,11 @@
                 <a href="{{ url_for('sites.update', id=site.id) }}" class="button is-primary is-light">
                     <span class="icon">
                         <i class="fas fa-edit"></i>
+                    </span>
+                </a>
+                <a href="{{ url_for('sites.delete', id=site.id) }}" class="button is-danger" onclick="return confirm('Удалить сайт: {{ site.domain }}?')">
+                    <span class="icon">
+                        <i class="fas fa-trash-alt"></i>
                     </span>
                 </a>
             </th>

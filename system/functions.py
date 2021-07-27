@@ -4,12 +4,9 @@ import re
 import requests_html
 import time
 import json
-import random
 import platform
 import subprocess
-import sys
 
-from urllib import parse
 from fake_headers import Headers
 
 def get_browser(_async=False):
@@ -196,7 +193,7 @@ async def get_seo_data(url_data):
     }
     """
     try:
-        from web_app.funcs import save_to_db
+        from web_app.funcs import save_seo_to_db as save_to_db
 
         asession = get_browser(_async=True)
         doc = """<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script><a href='https://httpbin.org'>"""
@@ -322,8 +319,3 @@ async def get_seo_data(url_data):
 
     except:
         print('ОШИБИЩЕ')
-
-async def _get_seo_data(url_data):
-    print(url_data)
-    breakpoint()
-    return url_data

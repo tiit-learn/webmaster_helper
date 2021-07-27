@@ -8,11 +8,12 @@ import sqlite3
 import itertools
 
 from flask import (
-    Blueprint, g, current_app
+    Blueprint
 )
 
 from flask.cli import with_appcontext
 
+from system import mail_funcs
 from system.functions import get_seo_data
 
 bp = Blueprint('funcs', __name__)
@@ -26,7 +27,7 @@ def get_db():
     db.row_factory = sqlite3.Row
     return db
 
-def save_to_db(id, site_data, whois_data):
+def save_seo_to_db(id, site_data, whois_data):
     tries = 0
     db = get_db()
     while tries < 5:
@@ -49,6 +50,28 @@ def save_to_db(id, site_data, whois_data):
         finally:
             tries += 1
 
+def save_mails_to_db(id_msg, to_email, from_email, form_name, subject, body):
+    tries = 0
+    db = get_db()
+    while tries < 5:
+        try:
+            mail = db.execute(
+            'SELECT id FROM mails WHERE status_mail == ?', (id_msg,)
+                ).fetchone()
+            if not mail:
+                db.execute(
+                    'INSERT INTO mails (status_mail, from_name, to_name, body)'
+                    'VALUES (?, ?, ?, ?)',
+                    (id_msg, from_email, to_email, body)
+                )
+        except Exception as err:
+            print('Ошибка БД:',err)
+            time.sleep(random.randint(1,5))
+        else:
+            db.commit()
+            break
+        finally:
+            tries += 1
     
 
 async def proxy_setup():
@@ -104,6 +127,9 @@ def site_data():
     end = time.perf_counter()
     print(f'Finished at {end - start}s')
 
+def get_mails():
+    mail_funcs.get_user_mails()
+
 @click.command('get-site-data')
 @with_appcontext
 def site_data_command():
@@ -111,6 +137,17 @@ def site_data_command():
     site_data()
 
 
-def get_data(app):
+def get_data_cli(app):
     app.app_context()
     app.cli.add_command(site_data_command)
+
+@click.command('get-mails')
+@with_appcontext
+def get_mails_command():
+    click.echo('Получение Email по РАССПИСАНИЮ')
+    get_mails()
+
+
+def get_mails_cli(app):
+    app.app_context()
+    app.cli.add_command(get_mails_command)

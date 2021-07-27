@@ -198,10 +198,9 @@ def update(id):
                             categories=categories,
                             webmasters=webmasters)
 
-@bp.route('/<int:id>/delete', methods=('POST',))
+@bp.route('/<int:id>/delete', methods=('POST','GET'))
 @login_required
 def delete(id):
-    get_site(id)
     db = get_db()
     db.execute('DELETE FROM sites WHERE id = ?', (id,))
     db.commit()

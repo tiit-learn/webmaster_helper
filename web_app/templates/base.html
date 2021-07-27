@@ -6,10 +6,11 @@
     <title>{% block title %}{% endblock %} - Webmaster Helper</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
     <link rel="stylesheet" href="https://bulma.io/vendor/fontawesome-free-5.15.2-web/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.bulma.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">   
     <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/ui-lightness/jquery-ui.css"
     rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bulma.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.bulma.min.css">   
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">  
     </script>  
@@ -17,6 +18,14 @@
     </script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bulma.min.js"></script>
+
+    <script src="https://unpkg.com/vue"></script>
+    <!-- Full bundle -->
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+    <!-- Individual components -->
+    <script src="https://unpkg.com/buefy/dist/components/table"></script>
+    <script src="https://unpkg.com/buefy/dist/components/input"></script>
+
     <style>
       .ui-menu {
         z-index: 9999!important;
@@ -41,6 +50,9 @@
               </a>
               <a href="{{ url_for('categories.index') }}" class="navbar-item">
                 Категории
+              </a>
+              <a href="{{ url_for('mails.index') }}" class="navbar-item">
+                Почта
               </a>
               <a href="{{ url_for('configs.index') }}" class="navbar-item">
                 Настройки

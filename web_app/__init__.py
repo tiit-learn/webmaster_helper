@@ -1,4 +1,5 @@
 import os
+import json
 
 from datetime import datetime, timedelta
 from flask.templating import render_template
@@ -37,15 +38,17 @@ def create_app(test_config=None):
 
     from . import db, funcs
     db.init_app(app)
-    funcs.get_data(app)
+    funcs.get_data_cli(app)
+    funcs.get_mails_cli(app)
 
-    from . import auth, webmasters, sites, categories, configs, funcs
+    from . import auth, webmasters, sites, categories, configs, funcs, mails
     app.register_blueprint(auth.bp)
     app.register_blueprint(sites.bp)
     app.register_blueprint(webmasters.bp)
     app.register_blueprint(categories.bp)
     app.register_blueprint(configs.bp)
     app.register_blueprint(funcs.bp)
+    app.register_blueprint(mails.bp)
 
     app.add_url_rule('/', endpoint='index')
 
@@ -82,8 +85,15 @@ def create_app(test_config=None):
             return days.days
         return date
 
+    @environmentfilter
+    def _jinja2_filter_to_json(_, string):
+        if string:
+            return sorted(json.loads(string), key=lambda x: x['contact_type'])
+        return string
+
     FILTERS["strftime"] = _jinja2_filter_datetime
     FILTERS["convert_to_date"] = _jinja2_filter_date_convert
     FILTERS["get_date_diff"] = _jinja2_filter_date_diff
+    FILTERS["to_json"] = _jinja2_filter_to_json
 
     return app

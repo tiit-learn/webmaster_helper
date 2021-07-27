@@ -150,6 +150,7 @@ proxies.txt
 
 # test
 test*
+dev_templates*
 
 # VSCode files
 .vscode
