@@ -1,10 +1,45 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  {% block title %}Связаться с вебмастером сайта{% endblock %}
+{% block title %}Связаться с вебмастером сайта ({{ site.domain }}){% endblock %}
 {% endblock %}
 
 {% block content %}
+<div class="notification is-primary is-light">
+  <h3>Доступные поля таблицы</h3>
+  <hr>
+  {% for key in site.keys() %}
+  <span class="tag is-white">{{key}}</span>
+  {% endfor %}
+</div>
+<h2 class="is-size-4">Вся доступная информация о домене</h2>
+<span class="tag">Whois</span>
+<span class="tag">Seo</span>
+<span class="tag">Информация о вебмастере и остальных его сайтов</span>
+<span class="tag">Последние полученные</span>
+<span class="tag">Последние отправленные</span>
+<hr>
+<h2 class="is-size-4">Форма контакта, в зависимости от выбранного поля</h2>
 
+<div id="example">
+  <p>Original message: "{{ message }}"</p>
+  <p>Computed reversed message: "{{ reversedMessage }}"</p>
+</div>
+
+<script>
+var vm = new Vue({
+  el: '#example',
+  data: {
+    message: 'Hello'
+  },
+  computed: {
+    // a computed getter
+    reversedMessage: function () {
+      // `this` points to the vm instance
+      return this.message.split('').reverse().join('')
+    }
+  }
+})
+</script>
 
 {% endblock %}

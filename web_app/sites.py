@@ -210,9 +210,20 @@ def delete(id):
 @login_required
 def contact(id):
     site = get_db().execute(
-        'SELECT * FROM sites WHERE id = ?', (id,)
+        'SELECT * FROM sites LEFT OUTER'
+        ' JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER'
+        ' JOIN categories AS cat ON sites.category_id = cat.id'
+        ' WHERE sites.id == ?', (id,)
+
     ).fetchone()
     if not site or (not site['contact_form_link']) and (not site['webmaster_id']):
         abort(404, f'Contacts for ({id}) not found.')
-    return render_template('sites/contact.html', site=site)
+
+    contacts = []
+    if site['contact_form_link']:
+        contacts.append(('link', site['contact_form_link']))
+    if site['contacts']:
+        for contact in json.loads(site['contacts']):
+            contacts.append((contact['contact_type'], contact['contact']))
+    return render_template('sites/contact.html', site=site, contacts=contacts)
 

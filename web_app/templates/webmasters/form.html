@@ -48,12 +48,13 @@
         <div class="field">
             <p class="control">
               <input @click="submit" class="button is-success" type="submit" value="Изменить">
-            
-            <a href="{{ url_for('webmasters.delete', id=webmaster.id) }}" class="button is-danger" onclick="return confirm('Удалить вебмастера: {{ webmaster.webmaster_name }}?')">
-                <span class="icon">
-                    <i class="fas fa-trash-alt"></i>
-                </span>
-            </a>
+            {% if webmaster.id %}
+                <a href="{{ url_for('webmasters.delete', id=webmaster.id) }}" class="button is-danger" onclick="return confirm('Удалить вебмастера: {{ webmaster.webmaster_name }}?')">
+                    <span class="icon">
+                        <i class="fas fa-trash-alt"></i>
+                    </span>
+                </a>
+            {% endif %}
         </p>
         </div>
     </div>

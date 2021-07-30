@@ -93,7 +93,7 @@ def remove_http(url):
 def get_whois_rows(domain):
     _domain = domain.split('.')
     _domain = _domain[-1] if len(_domain) == 2 else '.'.join(_domain[len(_domain)-2:])
-    print(domain, _domain, '\n')
+
     if _domain in ('net', 'com', 'guru', 'org', 'info', 'gen.in', 'biz'):
         rows = {
             'name_servers': 'Name Server',
@@ -145,7 +145,6 @@ def get_whois(url, whois_data):
                 print("downloading dependencies")
                 folder = os.getcwd()
                 copy_command = r"copy \\live.sysinternals.com\tools\whois.exe " + folder
-                print(copy_command)
                 p = subprocess.call(
                     copy_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = subprocess.run([r'.\whois.exe', url], stdout=subprocess.PIPE)

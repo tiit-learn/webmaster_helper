@@ -36,11 +36,7 @@ def create_app(test_config=None):
     def about_us():
         return render_template('info.html')
 
-    from . import db, funcs
-    db.init_app(app)
-    funcs.get_data_cli(app)
-    funcs.get_mails_cli(app)
-
+    # Adding blueprints
     from . import auth, webmasters, sites, categories, configs, funcs, mails
     app.register_blueprint(auth.bp)
     app.register_blueprint(sites.bp)
@@ -95,5 +91,11 @@ def create_app(test_config=None):
     FILTERS["convert_to_date"] = _jinja2_filter_date_convert
     FILTERS["get_date_diff"] = _jinja2_filter_date_diff
     FILTERS["to_json"] = _jinja2_filter_to_json
+
+    # Custom CLI commands
+    from . import db, funcs
+    db.init_app(app)
+    funcs.get_data_cli(app)
+    funcs.get_mails_cli(app)
 
     return app
