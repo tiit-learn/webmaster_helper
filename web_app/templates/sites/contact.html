@@ -21,8 +21,36 @@
 <hr>
 <h2 class="is-size-4">Форма контакта, в зависимости от выбранного поля</h2>
 
-<script>
+<div id="app">
+  <div class="input-field">
+    <label>Выбор способа связи</label>
+    <select v-model="selected">
+       <option v-for="contact in contacts" v-bind:value="contact" value="">
+           [[ contact ]]
+      </option>
+    </select>
+  </div>
+  <button @click="contact_now">Зафиксировать контакт</button>
+</div>
 
+<script>
+  new Vue({
+    el: '#app',
+    delimiters: ['[[', ']]'],
+    data: function () {
+        return {
+          contacts: [ 
+            {%- for contact in contacts -%}"{{contact.1}}",{%- endfor -%}
+          ],
+          selected: ""
+        }
+    },
+    methods: {
+      contact_now: function () {
+        console.log(this.selected)
+      }
+    }
+})
 </script>
 
 {% endblock %}
