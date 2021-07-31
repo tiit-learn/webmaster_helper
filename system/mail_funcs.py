@@ -2,11 +2,28 @@ import imaplib
 import email
 import os
 import re
+import random
+import smtplib
+
+from email.mime.text import MIMEText
+from email.header import Header
 
 from bs4 import BeautifulSoup as soup
 from email.header import decode_header
 
+def randomize(match):
+    "Function return 1 word before randomizer"
+    res = match.group(1).split('|')
+    random.shuffle(res)
+    return res[0]
+
+
+def random_sentence(tpl):
+    "Function sub all find patterns and randomize it"
+    return re.sub(r'{(.*?)}', randomize, tpl)
+
 def get_user_mails():
+    """Function to get mails from user email and store it on DB."""
     from web_app.funcs import save_mails_to_db as save_to_db
 
     username = os.environ.get('MAIL_USER')
@@ -82,3 +99,31 @@ def get_user_mails():
                 print('')
                 save_to_db(id_msg, To_email, Email, From, subject, body)
     print(''.center(80, '='))
+
+def send_mail(email, title, body):
+    """Function send mail to email and return True if all success or
+    False if some errors.
+    :param email: email of webmaster
+    :param title: title of mail to webmaster
+    :param body: body of mail ti webmaster
+    """
+    print(f'To: {email}. Send: {title} {body}')
+
+    username = os.environ.get('MAIL_USER')
+    password = os.environ.get('MAIL_USER_PSWD')
+
+    with smtplib.SMTP_SSL('smtp.yandex.ru', 465) as smtp:
+        smtp.ehlo()
+        smtp.login(username, password)
+
+        msg = MIMEText(body, "plain", 'utf-8')
+        msg["Subject"] = Header(title, 'utf-8')
+        msg["From"] = username
+        msg["To"] = email
+
+        try:
+            smtp.sendmail(username, email, msg.as_string())
+        except:
+            return False
+        else:
+            return True

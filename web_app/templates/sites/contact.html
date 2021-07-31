@@ -19,38 +19,103 @@
 <span class="tag">Последние полученные</span>
 <span class="tag">Последние отправленные</span>
 <hr>
-<h2 class="is-size-4">Форма контакта, в зависимости от выбранного поля</h2>
 
-<div id="app">
-  <div class="input-field">
-    <label>Выбор способа связи</label>
-    <select v-model="selected">
-       <option v-for="contact in contacts" v-bind:value="contact" value="">
-           [[ contact ]]
-      </option>
-    </select>
+<form method="post">
+  <div id="app">
+
+    <div class="box" v-if="form_container !== 'mail'">
+      <h3 class="is-size-5 mb-3">Пример письма:</h3> 
+      <div class="content">
+        <label class="label">Заголовок</label>
+        <p>{{pattern.title}} ({{ site.domain }})</p>
+        <label class="label">Текст письма</label>
+        <p>{{pattern.body}} - {{ site.domain }}</p>
+      </div>
+    </div>
+
+    <h2 class="is-size-4">Форма контакта</h2>
+
+    <section class="my-3">
+      <b-field>
+        <b-select  name="contact_type" placeholder="Выбор способа" icon="id-card" v-model="selected" @change.native="onchange()">
+            <optgroup label="Почта">
+              <option v-for="contact in contacts" v-bind:value="[[contact.type + ':' + contact.contact]]" value="" v-if="contact.type === 'mail'">
+                [[ contact.contact ]]
+              </option>
+            </optgroup>
+
+            <optgroup label="Скайп">
+              <option v-for="contact in contacts" v-bind:value="[[contact.type + ':' + contact.contact]]" value="" v-if="contact.type === 'skype'">
+                [[ contact.contact ]]
+              </option>
+            </optgroup>
+
+            <optgroup label="Ссылка">
+              <option v-for="contact in contacts" v-bind:value="[[contact.type + ':' + contact.contact]]" value="" v-if="contact.type === 'link'">
+                [[ contact.contact ]]
+              </option>
+            </optgroup>
+        </b-select>
+      </b-field>
+    </section>
+
+    <div class="box" v-if="form_container === 'mail'">
+      <div class="field">
+        <label class="label">Заголовок</label>
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" type="text" placeholder="Тема письма" name="mail_title" value="{{pattern.title}} ({{ site.domain }})">
+          <span class="icon is-small is-left">
+            <i class="fas fa-envelope"></i>
+          </span>
+        </p>
+      </div>
+      
+      <div class="field">
+        <label class="label">Текст письма</label>
+        <div class="control">
+          <textarea class="textarea" placeholder="Текст письма" rows="10" name="mail_text">{{pattern.body}} - {{ site.domain }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-grouped my-3" v-if="selected">
+      <div class="control">
+        <button class="button is-success" @click="contact_now" type="submit">Зафиксировать контакт</button>
+      </div>
+    </div>
+    
   </div>
-  <button @click="contact_now">Зафиксировать контакт</button>
-</div>
+</form>
 
 <script>
-  new Vue({
+  const app = new Vue({
     el: '#app',
     delimiters: ['[[', ']]'],
     data: function () {
-        return {
-          contacts: [ 
-            {%- for contact in contacts -%}"{{contact.1}}",{%- endfor -%}
-          ],
-          selected: ""
-        }
+      this.$buefy.config.setOptions({defaultIconPack: 'fas'});
+      return {
+        contacts: [ 
+          {%- for contact in contacts -%}{type: "{{contact.0}}", contact: "{{contact.1}}"},{%- endfor -%}
+        ],
+        selected: "",
+        form_container: false,
+      }
     },
     methods: {
       contact_now: function () {
         console.log(this.selected)
+      },
+      onchange: function() {
+        this.form_container = this.selected[0][0].toLowerCase().split(':')[0];
+        if (this.form_container === 'link') {
+          window.open('http://' + this.selected[0][0].split(':')[1],"_blank");
+          window.focus()
+        }
       }
     }
-})
+  });
+
+
 </script>
 
 {% endblock %}

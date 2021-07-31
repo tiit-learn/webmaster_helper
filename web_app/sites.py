@@ -8,7 +8,7 @@ from flask import (
 
 from werkzeug.exceptions import abort
 
-from system import functions
+from system import functions, mail_funcs
 from web_app.auth import login_required
 from web_app.db import get_db
 from web_app.webmasters import get_webmaster_id
@@ -169,7 +169,6 @@ def update(id):
         if error is not None:
             flash(error)
         else:
-            
             db.execute(
                 'UPDATE sites SET domain = ?, category_id = ?, notes = ?, published = ?,'
                 'contact_form_link = ?, price = ?, webmaster_id = ?,'
@@ -206,9 +205,17 @@ def delete(id):
     db.commit()
     return redirect(url_for('sites.index'))
 
-@bp.route('/<int:id>/contact')
+@bp.route('/<int:id>/contact', methods=('GET', 'POST'))
 @login_required
 def contact(id):
+    if request.method == 'POST':
+        print(request.form)
+        if request.form['contact_type']:
+            type_contact, contact = request.form['contact_type'].split(':')
+            if type_contact == 'mail':
+                title, body = (request.form['mail_title'], request.form['mail_text'])
+                assert mail_funcs.send_mail(contact, title, body)
+            print('Записать контакт в БД')
     site = get_db().execute(
         'SELECT * FROM sites LEFT OUTER'
         ' JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER'
@@ -216,6 +223,18 @@ def contact(id):
         ' WHERE sites.id == ?', (id,)
 
     ).fetchone()
+
+    pattern = get_db().execute(
+        'SELECT patterns FROM settings'
+        ' WHERE user_id == ?', (str(g.user['id']))
+    ).fetchone()
+    
+    if pattern:
+        pattern = dict(pattern)['patterns']
+        pattern = json.loads(pattern)
+        pattern['title'] = mail_funcs.random_sentence(pattern['title'])
+        pattern['body'] = mail_funcs.random_sentence(pattern['body'])
+
     if not site or (not site['contact_form_link']) and (not site['webmaster_id']):
         abort(404, f'Contacts for ({id}) not found.')
 
@@ -225,5 +244,8 @@ def contact(id):
     if site['contacts']:
         for contact in json.loads(site['contacts']):
             contacts.append((contact['contact_type'], contact['contact']))
-    return render_template('sites/contact.html', site=site, contacts=contacts)
+    return render_template('sites/contact.html',
+                            site=site,
+                            contacts=contacts,
+                            pattern=pattern)
 

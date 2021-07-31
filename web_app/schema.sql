@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS webmasters;
 DROP TABLE IF EXISTS mails;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS settings;
 
 
 CREATE TABLE sites (
@@ -49,6 +50,13 @@ CREATE TABLE users (
 CREATE TABLE categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
+);
+
+CREATE TABLE settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    patterns TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 INSERT INTO categories VALUES(0, '');
