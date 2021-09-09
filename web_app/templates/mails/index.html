@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block header %}
+{% block title %}Почта (INBOX){% endblock %}
+{% endblock %}
+
+{% block content %}
+<table class="table box" id="main-table">
+    <style type="text/css">
+        tr > th:first-child {
+            width: 10%;
+            word-break: break-all;
+        }
+    </style>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>From</th>
+            <th>Body</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody class="is-size-7">
+
+        {% for mail in mails[:30] %}
+        <tr>
+            <th>
+                {{ mail.mail_date | strftime }}
+            </th>
+            <th>
+                {{ mail.from_name }}
+            </th>
+            <th>
+                <a href="{{ url_for('mails.mail', id=mail.id) }}">{{ mail.body[:200] }}...</a>
+            </th>
+            <th>
+            {% if mail.status == 0 %}
+                NEW
+            {% endif %}
+            </th>
+        </tr>
+        
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
