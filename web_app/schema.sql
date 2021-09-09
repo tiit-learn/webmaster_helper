@@ -34,10 +34,15 @@ CREATE TABLE mails (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     site_id INTEGER,
     site TEXT,
+    mail_box TEXT,
+    mail_date TEXT,
     status_mail TEXT NOT NULL,
+    uniq_gen TEXT UNIQUE NOT NULL,
     from_name TEXT,
     to_name TEXT,
     body TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    status NUMERIC NOT NULL,
     FOREIGN KEY (site_id) REFERENCES sites (id)
 );
 

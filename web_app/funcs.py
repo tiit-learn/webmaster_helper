@@ -27,6 +27,7 @@ def get_db():
     db.row_factory = sqlite3.Row
     return db
 
+
 def save_seo_to_db(id, site_data, whois_data):
     tries = 0
     db = get_db()
@@ -34,62 +35,94 @@ def save_seo_to_db(id, site_data, whois_data):
         try:
             db.execute(
                 'UPDATE sites SET seo_data = ? WHERE id = ?', (json.dumps(site_data),
-                                                                id)
+                                                               id)
             )
             if whois_data:
                 db.execute(
                     'UPDATE sites SET whois_data = ? WHERE id = ?', (json.dumps(whois_data),
-                                                                    id)
+                                                                     id)
                 )
         except Exception as err:
-            print('Ошибка БД:',err)
-            time.sleep(random.randint(1,5))
+            print('Ошибка БД:', err)
+            time.sleep(random.randint(1, 5))
         else:
             db.commit()
             break
         finally:
             tries += 1
 
-def save_mails_to_db(id_msg, to_email, from_email, form_name, subject, body):
+
+def get_count_emails(status, box):
+    db = get_db()
+    emails = db.execute(
+        'SELECT id FROM mails WHERE status = ? AND mail_box = ?', (
+            status, box)
+    ).fetchall()
+    count_emails = len(emails)
+    return count_emails
+
+
+def check_emails_in_db(mail_ids, box):
+    """
+    Checking uniq_gen in the mails table.
+    Returns a sorted list of mails that are not in the database.
+    """
+    _mail_ids = []
+    db = get_db()
+    for mail_id in mail_ids:
+        _uniq_get = f'{box}_{mail_id}'
+        exist_ids = db.execute(
+            'SELECT uniq_gen FROM mails WHERE uniq_gen = ?', (_uniq_get,)
+        ).fetchall()
+        if not exist_ids:
+            _mail_ids.append(mail_id)
+    print(f'{len(_mail_ids)} New emails')
+    return _mail_ids
+
+
+def save_mails_to_db(mail_box, mail_date, id_msg, uniq_gen, to_email, from_email, subject, body):
     tries = 0
+    status = 0
     db = get_db()
     while tries < 5:
         try:
             mail = db.execute(
-            'SELECT id FROM mails WHERE status_mail == ?', (id_msg,)
-                ).fetchone()
+                'SELECT id FROM mails WHERE uniq_gen = ?', (uniq_gen,)
+            ).fetchone()
             if not mail:
                 db.execute(
-                    'INSERT INTO mails (status_mail, from_name, to_name, body)'
-                    'VALUES (?, ?, ?, ?)',
-                    (id_msg, from_email, to_email, body)
+                    'INSERT INTO mails (uniq_gen, mail_box, mail_date, status_mail, from_name, to_name, body, subject, status)'
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (uniq_gen, mail_box, mail_date, id_msg,
+                     from_email, to_email, body, subject, status)
                 )
         except Exception as err:
-            print('Ошибка БД:',err)
-            time.sleep(random.randint(1,5))
+            print('Ошибка БД:', err)
+            time.sleep(random.randint(1, 5))
         else:
             db.commit()
             break
         finally:
             tries += 1
-    
+
 
 async def proxy_setup():
     if not os.path.exists('proxies.txt'):
-        print('Прокси не будут использованы')
+        print('Proxies don\'t found')
         os.environ["PROXY_WORK"] = ""
     else:
         with open('proxies.txt') as file:
             lines = file.readlines()
             proxy = random.choice(lines)
             os.environ['FULL_PROXY_LINK'] = proxy
-            user_name,*_, port = proxy.split(':')
+            user_name, *_, port = proxy.split(':')
             password, _ = _[0].split('@z')
             proxy_domain = 'z' + _
             os.environ['PROXIE_DOMAIN'] = proxy_domain
             os.environ['PROXIE_PORT'] = port
             os.environ['PROXIE_USERNAME'] = user_name
             os.environ['PROXIE_PASSWORD'] = password
+
 
 async def get_sites_data(sites):
     if os.getenv('PROXY_WORK'):
@@ -110,6 +143,7 @@ async def get_sites_data(sites):
     except:
         print('Ошибка в (get_sites_data)')
 
+
 def site_data():
     # Установка флага работы через прокси. 1 - работать с прокси
     os.environ["PROXY_WORK"] = "1"
@@ -127,8 +161,10 @@ def site_data():
     end = time.perf_counter()
     print(f'Finished at {end - start}s')
 
+
 def get_mails():
     mail_funcs.get_user_mails()
+
 
 @click.command('get-site-data')
 @with_appcontext
@@ -140,6 +176,7 @@ def site_data_command():
 def get_data_cli(app):
     app.app_context()
     app.cli.add_command(site_data_command)
+
 
 @click.command('get-mails')
 @with_appcontext

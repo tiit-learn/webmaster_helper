@@ -16,8 +16,7 @@
 <span class="tag">Whois</span>
 <span class="tag">Seo</span>
 <span class="tag">Информация о вебмастере и остальных его сайтов</span>
-<span class="tag">Последние полученные</span>
-<span class="tag">Последние отправленные</span>
+
 <hr>
 
 <form method="post">
@@ -44,6 +43,12 @@
               </option>
             </optgroup>
 
+            <optgroup label="Telegram">
+              <option v-for="contact in contacts" v-bind:value="[[contact.type + ':' + contact.contact]]" value="" v-if="contact.type === 'telegram'">
+                [[ contact.contact ]]
+              </option>
+            </optgroup>
+
             <optgroup label="Скайп">
               <option v-for="contact in contacts" v-bind:value="[[contact.type + ':' + contact.contact]]" value="" v-if="contact.type === 'skype'">
                 [[ contact.contact ]]
@@ -55,6 +60,13 @@
                 [[ contact.contact ]]
               </option>
             </optgroup>
+
+            <optgroup label="Другое">
+              <option v-for="contact in contacts" v-bind:value="[[contact.type + ':' + contact.contact]]" value="" v-if="contact.type === 'other'">
+                [[ contact.contact ]]
+              </option>
+            </optgroup>
+
         </b-select>
       </b-field>
     </section>
@@ -87,6 +99,32 @@
   </div>
 </form>
 
+{% if mails_send %}
+<h2 class="is-size-5 mb-3">Последние отправленные</h2>
+<div class="box">
+  {% for mail_send in mails_send %}
+    <div class="content">
+      <p>{{mail_send.subject}} - {{mail_send.to_name}} ({{ mail_send.mail_date | strftime }})</p>
+      <p>{{mail_send.body}}</p>
+    </div>
+    <hr>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if mails_received %}
+<h2 class="is-size-5 mb-3">Последние полученные</h2>
+<div class="box">
+  {% for mail_send in mails_received %}
+    <div class="content">
+      <p>{{mail_send.subject}} - {{mail_send.from_name}} ({{ mail_send.mail_date | strftime }})</p>
+      <p>{{mail_send.body}}</p>
+    </div>
+    <hr>
+  {% endfor %}
+</div>
+{% endif %}
+
 <script>
   const app = new Vue({
     el: '#app',
@@ -107,7 +145,7 @@
       },
       onchange: function() {
         this.form_container = this.selected[0][0].toLowerCase().split(':')[0];
-        if (this.form_container === 'link') {
+        if (this.form_container === 'link' || this.form_container === 'other') {
           window.open('http://' + this.selected[0][0].split(':')[1],"_blank");
           window.focus()
         }

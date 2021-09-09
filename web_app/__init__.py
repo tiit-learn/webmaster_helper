@@ -1,7 +1,7 @@
 import os
 import json
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask.templating import render_template
 
 from jinja2.filters import FILTERS, environmentfilter
@@ -9,29 +9,29 @@ from flask import Flask
 
 ABS_CONFIG_PATH = os.path.join(os.path.abspath('.'), 'configs')
 
+# TODO: Create checker of publishing on webmasters sites
+# TODO: Create notify of new emails
+# TODO: Create function to stop monitoring publishing on site
+
+
 def create_app(test_config=None):
-    
-    # создание и конфигурация приложения
     app = Flask(__name__, instance_relative_config=True,
                 instance_path=ABS_CONFIG_PATH)
 
     app.config.from_mapping(
-        SECRET_KEY = 'dev',
+        SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'database.sqlite')
     )
     if test_config is None:
-        # Загрузка конфигурации экземпляра, если существует и не тестирование
         app.config.from_pyfile('config.py', silent=True)
     else:
-        # Загрузка тестовой конфигурации
         app.config.from_mapping(test_config)
-
-    # Убедиться, что каталог экземляра существует
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    # Создание простой страницы  
+
+    # TODO: Put in to separate file
     @app.route('/info')
     def about_us():
         return render_template('info.html')
@@ -48,11 +48,18 @@ def create_app(test_config=None):
 
     app.add_url_rule('/', endpoint='index')
 
-    # Custom filters
+    # Custom Jinjs2 filters
     @environmentfilter
     def _jinja2_filter_datetime(_, date, fmt=r"%d/%m/%Y"):
-        return datetime.fromtimestamp(int(date)).strftime(fmt)
-    
+        """
+        Filter 'strftime' for string, number, float.
+        Convert timestamp to date with format.
+        Default format:
+            Day/Month/Year
+            01/12/2021
+        """
+        return datetime.fromtimestamp(float(date)).strftime(fmt)
+
     @environmentfilter
     def _jinja2_filter_date_convert(_, date, fmt=r"%d/%m/%Y"):
         if date:
@@ -73,10 +80,10 @@ def create_app(test_config=None):
             else:
                 date = date.split()
             format = '%Y-%m-%d'
-            
+
             date = datetime.strptime(date[0], format)
             date_now = datetime.now()
-            days = date_now-date
+            days = date_now - date
 
             return days.days
         return date

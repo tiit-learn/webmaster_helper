@@ -1,15 +1,25 @@
-from datetime import datetime
+import re
+
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for, json
+    Blueprint, flash, redirect, render_template, request, url_for, json
 )
 
 from werkzeug.exceptions import abort
 
-from system import functions
 from web_app.auth import login_required
 from web_app.db import get_db
 
 bp = Blueprint('webmasters', __name__, url_prefix='/webmaster')
+
+
+def normalize_contact(contact_list):
+    contact_list = json.loads(contact_list)
+    for contact in contact_list:
+        if contact['contact']:
+            contact['contact'] = re.sub(
+                r'http(s)?:\/\/(www\.)?', '', contact['contact'])
+    return json.dumps(contact_list)
+
 
 def get_webmaster(id):
     webmaster = get_db().execute(
@@ -19,16 +29,19 @@ def get_webmaster(id):
         abort(404, f'Webmaster {id} not found.')
     return webmaster
 
+
 def get_webmaster_id(name):
     webmaster = get_db().execute(
         'SELECT id FROM webmasters WHERE webmaster_name == ?', (name,)
     ).fetchone()
     if not webmaster:
         db = get_db()
-        db.execute('INSERT INTO webmasters (webmaster_name) VALUES (?) ', (name.strip(),))
+        db.execute(
+            'INSERT INTO webmasters (webmaster_name) VALUES (?) ', (name.strip(),))
         db.commit()
         return get_webmaster_id(name)
     return webmaster['id']
+
 
 def check_error(request_form, update=False):
     error = None
@@ -37,9 +50,9 @@ def check_error(request_form, update=False):
 
     if update:
         update = db.execute('SELECT id FROM webmasters WHERE'
-                    ' webmaster_name=? AND webmaster_name!=?',
-                    (request_form['webmaster_name'], update)
-                    ).fetchone()
+                            ' webmaster_name=? AND webmaster_name!=?',
+                            (request_form['webmaster_name'], update)
+                            ).fetchone()
 
     if not request_form['webmaster_name']:
         error = 'Необходимо указать имя вебмастера.'
@@ -48,10 +61,11 @@ def check_error(request_form, update=False):
     elif db.execute('SELECT id FROM webmasters WHERE'
                     ' webmaster_name=?',
                     (request_form['webmaster_name'],)
-            ).fetchone() and update:
+                    ).fetchone() and update:
         error = 'Данный вебмастер уже существует.'
 
     return error
+
 
 @bp.route('/')
 def index():
@@ -61,6 +75,8 @@ def index():
     ).fetchall()
     return render_template('webmasters/index.html', webmasters=webmasters)
 
+
+# TODO: Replace jQuery to Vue(buefy)
 @bp.route('/add', methods=('POST', 'GET'))
 @login_required
 def add():
@@ -68,7 +84,7 @@ def add():
         db = get_db()
 
         webmaster_name = request.form['webmaster_name']
-        contacts = request.form['contact_info']
+        contacts = normalize_contact(request.form['contact_info'])
         error = check_error(request.form)
 
         if error:
@@ -82,6 +98,7 @@ def add():
             return redirect(url_for('webmasters.index'))
     return render_template('webmasters/add.html', webmaster={})
 
+
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
 def update(id):
@@ -89,11 +106,11 @@ def update(id):
     webmaster = get_webmaster(id)
     if request.method == 'POST':
         webmaster_name = request.form['webmaster_name']
-        contacts = request.form['contact_info']
+        contacts = normalize_contact(request.form['contact_info'])
         error = check_error(request.form, update=webmaster['webmaster_name'])
 
         if error:
-                flash(error)
+            flash(error)
         else:
             db.execute(
                 'UPDATE webmasters SET webmaster_name=?, contacts=?'
@@ -102,6 +119,7 @@ def update(id):
             db.commit()
             return redirect(url_for('webmasters.index'))
     return render_template('webmasters/update.html', webmaster=webmaster)
+
 
 @bp.route('/<int:id>/delete')
 @login_required

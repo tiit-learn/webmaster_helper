@@ -9,12 +9,16 @@ import subprocess
 
 from fake_headers import Headers
 
+
 def get_browser(_async=False):
     """
-    Функция возвращает асинхронный браузер для быстрого получения данных
+    Функция возвращает асинхронный браузер для быстрого получения данных.
+    IMPORTANT: Function from requests_html, maybe need to replace requests_html
+    to requests, bs4 and pyppeteer
     """
 
-    asession = requests_html.AsyncHTMLSession() if _async else requests_html.HTMLSession()
+    asession = requests_html.AsyncHTMLSession(
+    ) if _async else requests_html.HTMLSession()
     asession.__browser_args = ['--start-maximized',
                                '--disable-setuid-sandbox',
                                '--disable-infobars',
@@ -33,11 +37,11 @@ def get_browser(_async=False):
             'https': f'http://{os.getenv("FULL_PROXY_LINK")}'
         }
         asession.proxies.update(proxies)
-        
 
     asession.headers.update(headers)
 
     return asession
+
 
 async def get_pyppe():
     from pyppeteer import launch
@@ -46,28 +50,28 @@ async def get_pyppe():
     if os.getenv('PROXY_WORK') and os.getenv('PROXIE_DOMAIN'):
         proxy = True
         proxy_domain = 'http://%s:%s' % (os.getenv('PROXIE_DOMAIN'),
-                                        os.getenv('PROXIE_PORT'))
+                                         os.getenv('PROXIE_PORT'))
         setup_proxy_link = f'--proxy-server={proxy_domain}'
     browser = await launch({"headless": True,
                             'args': ['' if not proxy else setup_proxy_link,
-                                    '--start-maximized',
-                                    '--disable-setuid-sandbox',
-                                    '--disable-infobars',
-                                    '--window-position=0,0',
-                                    '--ignore-certifcate-errors',
-                                    '--ignore-certifcate-errors-spki-list',
-                                    '--lang=en-EN']})
+                                     '--start-maximized',
+                                     '--disable-setuid-sandbox',
+                                     '--disable-infobars',
+                                     '--window-position=0,0',
+                                     '--ignore-certifcate-errors',
+                                     '--ignore-certifcate-errors-spki-list',
+                                     '--lang=en-EN']})
 
     page = await browser.newPage()
     await stealth(page)
-    await page.setUserAgent(Headers(headers=False).generate()['User-Agent'])
+    await page.setUserAgent(Headers(headers=True).generate()['User-Agent'])
 
     if os.getenv('PROXY_WORK') and all((os.getenv('PROXIE_USERNAME'),
-                                    os.getenv('PROXIE_PASSWORD'))):
+                                        os.getenv('PROXIE_PASSWORD'))):
         await page.authenticate({
             'username': os.getenv('PROXIE_USERNAME'),
             'password': os.getenv('PROXIE_PASSWORD')
-            })
+        })
     return page
 
 
@@ -81,6 +85,7 @@ def check_url(url):
         return True
     return False
 
+
 def remove_http(url):
     """
     Функция удаления протокола из строки URL. Удаляет http, https, ://, www., и
@@ -90,20 +95,22 @@ def remove_http(url):
     url = re.sub(pattern, '', url)
     return url
 
+
 def get_whois_rows(domain):
     _domain = domain.split('.')
-    _domain = _domain[-1] if len(_domain) == 2 else '.'.join(_domain[len(_domain)-2:])
-
-    if _domain in ('net', 'com', 'guru', 'org', 'info', 'gen.in', 'biz'):
-        rows = {
-            'name_servers': 'Name Server',
-            'create_date': 'Creation Date',
-            'end_date': 'Expiration Date',
-            'emails': 'Registrant Email',
-            'organization': 'Registrant Organization',
-            'registrar': 'Registrar'
-        }
-    elif _domain in ('ru', 'com.ua'):
+    _domain = _domain[-1] if len(_domain) == 2 else '.'.join(
+        _domain[len(_domain) - 2:])
+    # For all domaine like 'net', 'com', 'guru', 'org', 'info', 'gen.in', 'biz'
+    rows = {
+        'name_servers': 'Name Server',
+        'create_date': 'Creation Date',
+        'end_date': 'Expiration Date',
+        'emails': 'Registrant Email',
+        'organization': 'Registrant Organization',
+        'registrar': 'Registrar'
+    }
+    # If special domain
+    if _domain in ('ru', 'com.ua', 'xn--p1ai', 'rv.ua'):
         rows = {
             'name_servers': 'nserver',
             'create_date': 'created',
@@ -114,15 +121,22 @@ def get_whois_rows(domain):
         }
     return rows
 
-def parse_whois_data(domain, whois_data):
-    domain_rows = get_whois_rows(domain)
 
-    name_servers = set([i.lower().strip() for i in re.findall(rf'(?<={domain_rows["name_servers"]}:\s).+?(?=\r)',whois_data)])
-    create_date = set([i.lower().strip() for i in re.findall(rf'(?<={domain_rows["create_date"]}:\s).+?(?=\r)', whois_data)])
-    end_date = set([i.lower().strip() for i in re.findall(rf'(?<={domain_rows["end_date"]}:\s).+?(?=\r)', whois_data)])
-    emails = set([i.lower().strip() for i in re.findall(rf'(?<={domain_rows["emails"]}:\s).+?(?=\r)', whois_data)])
-    organization = set([i.lower().strip() for i in re.findall(rf'(?<={domain_rows["organization"]}:\s).+?(?=\r)', whois_data)])
-    registrar = set([i.lower().strip() for i in re.findall(rf'(?<={domain_rows["registrar"]}:\s).+?(?=\r)', whois_data)])
+def parse_whois_data(domain, whois_data):
+
+    domain_rows = get_whois_rows(domain)
+    name_servers = set([i.lower().strip() for i in re.findall(
+        rf'(?<={domain_rows["name_servers"]}:\s).+?(?=\r)', whois_data)])
+    create_date = set([i.lower().strip() for i in re.findall(
+        rf'(?<={domain_rows["create_date"]}:\s).+?(?=\r)', whois_data)])
+    end_date = set([i.lower().strip() for i in re.findall(
+        rf'(?<={domain_rows["end_date"]}:\s).+?(?=\r)', whois_data)])
+    emails = set([i.lower().strip() for i in re.findall(
+        rf'(?<={domain_rows["emails"]}:\s).+?(?=\r)', whois_data)])
+    organization = set([i.lower().strip() for i in re.findall(
+        rf'(?<={domain_rows["organization"]}:\s).+?(?=\r)', whois_data)])
+    registrar = set([i.lower().strip() for i in re.findall(
+        rf'(?<={domain_rows["registrar"]}:\s).+?(?=\r)', whois_data)])
 
     return (tuple(name_servers),
             tuple(create_date),
@@ -131,12 +145,15 @@ def parse_whois_data(domain, whois_data):
             tuple(organization),
             tuple(registrar))
 
+
 def get_whois(url, whois_data):
     """
     Функция получения WHOIS данных домена.
     """
+    # Encoding URL for cyrilic domain
+    url = url.encode('idna').decode('utf-8')
     whois_data = json.loads(whois_data) if whois_data else {}
-    if not whois_data or time.time() - whois_data['timedata'] > 864000:        
+    if not whois_data or time.time() - whois_data['timedata'] > 864000:
         if platform.system() == 'Windows':
             """
                 Windows 'whois' command wrapper
@@ -145,28 +162,29 @@ def get_whois(url, whois_data):
                 print("downloading dependencies")
                 folder = os.getcwd()
                 copy_command = r"copy \\live.sysinternals.com\tools\whois.exe " + folder
-                p = subprocess.call(
+                subprocess.call(
                     copy_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            result = subprocess.run([r'.\whois.exe', url], stdout=subprocess.PIPE)
-            
+            result = subprocess.run(
+                [r'.\whois.exe', url], stdout=subprocess.PIPE)
+
         else:
             """
                 Linux 'whois' command wrapper
             """
             result = subprocess.Popen(['whois', '.'.join(url)],
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         if result.returncode != 0 and result.returncode != 1:
             print('Что то не так!', url)
-        
+
         result = result.stdout.decode('utf-8')
 
         (name_servers,
-        create_date,
-        end_date,
-        emails,
-        organization,
-        registrar) = parse_whois_data(url, result)
+         create_date,
+         end_date,
+         emails,
+         organization,
+         registrar) = parse_whois_data(url, result)
 
         result_whois = {
             'name_servers': name_servers,
@@ -182,6 +200,7 @@ def get_whois(url, whois_data):
     # print('Данные WHOIS актуальны\n')
     return None
 
+
 async def get_seo_data(url_data):
     """
     Функция получения seo данных для указанного сайта. Возвращает строку JSON.
@@ -191,42 +210,47 @@ async def get_seo_data(url_data):
         ...
     }
     """
+    # TODO: Create 1 puppeteer chrome window. For all services need create tabs.
+    # TODO: Refactoring code
     try:
         from web_app.funcs import save_seo_to_db as save_to_db
 
         asession = get_browser(_async=True)
         doc = """<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script><a href='https://httpbin.org'>"""
 
-        result = json.loads(url_data['seo_data']) if url_data['seo_data'] else {}
+        result = json.loads(url_data['seo_data']
+                            ) if url_data['seo_data'] else {}
 
         url = url_data['domain']
-        
+
         async def get_alexa():
             if not result.get('alexa') or (result.get('alexa') and
-                            (time.time() - result['alexa']['timedata'] > 864000)):
+                                           (time.time() - result['alexa']['timedata'] > 864000)):
                 try:
                     response = await asession.get("https://alexa.com/siteinfo/" + url)
                 except Exception as err:
                     print('Ошибка %s:' % url, err)
                 else:
                     print(response.html.find('title', first=True).text)
-                    script = response.html.xpath('//script[contains(text(),"lifecycle_stage")]', first=True)
+                    script = response.html.xpath(
+                        '//script[contains(text(),"lifecycle_stage")]', first=True)
                     if script:
                         script = script.text + ' dataLayer[0]["siteinfo"]'
                         html = requests_html.HTML(html=doc, async_=True)
                         try:
                             val = await html.arender(script=script, reload=False)
-                            result['alexa'] = {'data': val if val else None, 'timedata': time.time()}
+                            result['alexa'] = {
+                                'data': val if val else None, 'timedata': time.time()}
                         except Exception as err:
                             print('Ошибка Alexa %s:' % url, err)
                     else:
-                        result['alexa'] = {'data': None, 'timedata': time.time()}
+                        result['alexa'] = {
+                            'data': None, 'timedata': time.time()}
 
         async def get_simularweb():
             if not result.get('simularweb') or (result.get('simularweb') and (time.time() - result['simularweb']['timedata'] > 864000)):
                 pattern = r'// lazy loader|//siteInfo: true,'
                 _url = "https://www.similarweb.com/ru/website/" + url
-
                 page = await get_pyppe()
                 try:
                     await page.goto(_url)
@@ -234,28 +258,29 @@ async def get_seo_data(url_data):
                     print('Ошибка %s:' % _url, err)
                 else:
                     title = await page.title()
-                    print(title)
                     html = await page.evaluate('document.documentElement.outerHTML', force_expr=True)
                     html = requests_html.HTML(html=html, async_=True)
-                    script = html.xpath('//script[contains(text(),"Sw.preloadedData")]', first=True)
-
-                    if script:
+                    if (script := html.xpath(
+                            '//script[contains(text(),"Sw.preloadedData")]', first=True)):
                         print(url, title)
-                        script = 'let Sw = []; ' + re.sub(pattern, '', script.text) + ' Sw.preloadedData.overview'
+                        script = 'let Sw = []; ' + \
+                            re.sub(pattern, '', script.text) + \
+                            ' Sw.preloadedData.overview'
                         html = requests_html.HTML(html=doc, async_=True)
                         val = await html.arender(script=script, reload=False)
-                        result['simularweb'] = {'data': val, 'timedata': time.time()}
+                        result['simularweb'] = {
+                            'data': val, 'timedata': time.time()}
+                    elif (script := html.xpath('//div[@class="Title"]', first=True).text) == 'Pardon Our Interruption...':
+                        print(url, title, '- CAPTCHA')
                     else:
-                        print(title, '- NOT FOUND')
-                        result['simularweb'] = {'data': None, 'timedata': time.time()}
-                finally:
-                    await page.close()
+                        print(url, title, '- NOT FOUND')
+                        result['simularweb'] = {
+                            'data': None, 'timedata': time.time()}
 
         async def get_moz():
             if not result.get('moz') or (result.get('moz') and (time.time() - result['moz']['timedata'] > 864000)):
 
                 _url = "https://moz.com/domain-analysis?site=" + url
-
                 page = await get_pyppe()
                 try:
                     await page.goto(_url)
@@ -267,24 +292,22 @@ async def get_seo_data(url_data):
                     html = await page.evaluate('document.documentElement.outerHTML', force_expr=True)
                     html = requests_html.HTML(html=html, async_=True)
                     if html.xpath('//div[contains(@class, "align-items-center")]/div[1]/h1',
-                                                    first=True):
+                                  first=True):
                         val = {
                             'da': html.xpath('//div[contains(@class, "align-items-center")]/div[1]/h1',
-                                                    first=True).text,
+                                             first=True).text,
                             'links': html.xpath('//div[contains(@class, "align-items-center")]/div[2]/h1',
-                                                    first=True).text,
+                                                first=True).text,
                             'keys_rank': html.xpath('//div[contains(@class, "align-items-center")]/div[3]/h1',
                                                     first=True).text,
                             'spam_score': html.xpath('//div[contains(@class, "align-items-center")]/div[4]/h1',
-                                                    first=True).text
+                                                     first=True).text
                         }
                         # await asyncio.sleep(0.5)
                         result['moz'] = {'data': val, 'timedata': time.time()}
                     else:
                         result['moz'] = {'data': None, 'timedata': time.time()}
-                finally:
-                    await page.close()
-        
+
         async def yandex_x():
             if not result.get('yandex_x') or (result.get('yandex_x') and (time.time() - result['yandex_x']['timedata'] > 864000)):
                 try:
@@ -292,16 +315,25 @@ async def get_seo_data(url_data):
                 except Exception as err:
                     print('Ошибка %s:' % url, err)
                 else:
-                    print(url, response.html.find('title', first=True).text)
-                    script = response.html.xpath('//script[contains(text(),"bh.lib.data")]', first=True)
+                    script = response.html.xpath(
+                        '//script[contains(text(),"bh.lib.data")]', first=True)
                     if script:
-                        script = 'let bh = {}; bh["lib"] = {}; ' + script.text + r'; bh.lib.data'
+                        print(url, response.html.find(
+                            'title', first=True).text)
+                        script = 'let bh = {}; bh["lib"] = {}; ' + \
+                            script.text + r'; bh.lib.data'
                         html = requests_html.HTML(html=doc, async_=True)
                         val = await html.arender(script=script, reload=False)
-                        result['yandex_x'] = {'data': val, 'timedata': time.time()}
+                        result['yandex_x'] = {
+                            'data': val, 'timedata': time.time()}
+                    elif "Подтвердите, что запросы отправляли вы, а не робот" in response.html.text:
+                        print(url, 'Yandex - CAPTCHA')
                     else:
-                        result['yandex_x'] = {'data': None, 'timedata': time.time()}
+                        print(url, 'Yandex - NOT FOUND')
+                        result['yandex_x'] = {
+                            'data': None, 'timedata': time.time()}
         try:
+            # TODO: search error 'Future exception was never retrieved'
             await asyncio.gather(
                 get_alexa(),
                 get_simularweb(),
@@ -312,9 +344,7 @@ async def get_seo_data(url_data):
         except Exception as err:
             print('Ошибка в (get_seo_data) %s: %s' % (url, err))
         else:
-            await asyncio.get_event_loop().run_in_executor(None, save_to_db, url_data['id'], result, whois_data) 
-        finally:
-            await asession.close()
+            await asyncio.get_event_loop().run_in_executor(None, save_to_db, url_data['id'], result, whois_data)
 
-    except:
+    except Exception:
         print('ОШИБИЩЕ')

@@ -22,6 +22,7 @@
     <span class="tag is-white">{{ title }}</span>
     {% endfor %}
 </div> -->
+<div id="app" class="container">
 
 <table class="table box" id="main-table">
     <thead>
@@ -34,7 +35,7 @@
             <th>Whois</th>
             <th>Стоимость</th>
             <th>Дата публикации</th>
-            <th>Дата контакта</th>
+            <th style="min-width: 110px">Дата контакта</th>
 
             {% if g.user %}
             <th style="min-width: 110px">Действия</th>
@@ -47,11 +48,11 @@
         <tr class="{%- if site.last_contact_date.status == 'pending' -%}
                     has-background-warning-light
                    {%- elif site.last_contact_date.status == 'publishing' -%}
-                    has-background-primary-light
+                    has-background-success-light
                    {%- elif site.last_contact_date.status == 'bad_condition' -%}
                     has-background-danger-light
                    {%- elif site.last_contact_date.status == 'not_publishing' -%}
-                    has-background-danger-dark
+                    has-background-danger-light
                    {%- endif -%}">
 
             <th style="max-width: 130px; overflow-wrap: break-word;">
@@ -130,7 +131,7 @@
             </th>
             <th>
                 {% if site.published %}
-                <a href="https://{{ site.published_link }}">{{ site.published | strftime }}</a><br>
+                <a href="https://{{ site.published_link }}"><span class="tag mb-1 is-info is-light"><i class="fas fa-calendar-alt mr-1"></i>{{ site.published | strftime }}</span></a><br>
                     {% if site.last_check %}
                     <span class="tag is-info is-light">{{ site.last_check }}</span>
                     {% else %}
@@ -140,29 +141,79 @@
                 -
                 {% endif %}
             </th>
-            <th id='notes_tooltip'>
-                {% if site.last_contact_date %}
-                    {{ site.last_contact_date.date | strftime  }}<br>
-                    ({{ site.last_contact_date.status }})
-                {% else %}
-                -
-                {% endif %}
+            <th id='notes_tooltip' style="max-width: 90px; overflow-wrap: break-word;">
+                {%- if site.last_contact_date -%}
+                    <span class="tag is-info is-light"><i class="fas fa-calendar-alt mr-1"></i>{{ site.last_contact_date.date | strftime  }}</span>
+                {%- endif -%}
+
+                <div class="control mt-1">
+                    <div class="tags has-addons">
+                    {%- if site.last_contact_date -%}
+                        <b-tooltip label="{%- if site.last_contact_date.status == 'pending' -%}Waiting for response type
+                                        {%- elif site.last_contact_date.status == 'bad_condition' -%}Bad conditions
+                                        {%- elif site.last_contact_date.status == 'not_publishing' -%}Fail. Not published post
+                                        {%- else -%}Waiting for response
+                                        {%- endif -%}"
+                                    class="tag is-
+                                        {%- if site.last_contact_date.status == 'pending' -%}warning
+                                        {%- elif site.last_contact_date.status == 'bad_condition' -%}warning
+                                        {%- elif site.last_contact_date.status == 'not_publishing' -%}danger
+                                        {%- else -%}success
+                                        {%- endif -%}"
+                                    size="is-small">
+                            {%- if site.last_contact_date.status == 'pending' -%}
+                                <i class="fas fa-hourglass-half"></i>
+                            {%- elif site.last_contact_date.status == 'bad_condition' -%}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {%- elif site.last_contact_date.status == 'not_publishing' -%}
+                                <i class="fas fa-times-circle"></i>
+                            {%- else -%}
+                                <i class="fas fa-check"></i>                    
+                            {%- endif -%}
+                        </b-tooltip>
+                    {%- else -%}
+                        <b-tooltip class="tag is-dark" label="Not contact yet" type="is-dark" size="is-small">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </b-tooltip>
+                    {%- endif -%}
+
+                    {%- if site.notes -%}
+                        <b-tooltip class="tag" type="is-info" size="is-small" :triggers="['click']" :auto-close="['outside', 'escape']">
+                            <template v-slot:content>
+                                {{ site.notes }} 
+                            </template>
+                            <span><i class="fas fa-info-circle"></i></span>
+                        </b-tooltip>
+                    {%- endif -%}
+                    </div>
+                </div>
+
+                  <div class="control mt-1">
+                    <div class="tags has-addons">
+                      <span class="tag is-dark"><i class="fas fa-inbox mr-1"></i>{{ site.mail_count }}</span>
+                      {% if site.new_mail_count %}
+                      <span class="tag is-success"><i class="fas fa-reply mr-1"></i>+{{ site.new_mail_count }}</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                
             </th>
             {% if g.user %}
             <th>
                 {% if site.contact_form_link or site.webmaster_name %}
-                    <a href="{{ url_for('sites.contact', id=site.id) }}" class="button is-warning">
+                    <a href="{{ url_for('sites.contact', id=site.id) }}" class="tag is-warning">
                         <span class="icon">
                             <i class="fas fa-paper-plane"></i>
                         </span>
                     </a>
                 {% endif %}
-                <a href="{{ url_for('sites.update', id=site.id) }}" class="button is-primary is-light">
+                <a href="{{ url_for('sites.update', id=site.id) }}" class="tag is-info">
                     <span class="icon">
                         <i class="fas fa-edit"></i>
                     </span>
                 </a>
-                <a href="{{ url_for('sites.delete', id=site.id) }}" class="button is-danger" onclick="return confirm('Удалить сайт: {{ site.domain }}?')">
+                <a href="{{ url_for('sites.delete', id=site.id) }}" class="tag is-danger" onclick="return confirm('Удалить сайт: {{ site.domain }}?')">
                     <span class="icon">
                         <i class="fas fa-trash-alt"></i>
                     </span>
@@ -174,7 +225,12 @@
         {% endfor %}
     </tbody>
 </table>
+
+</div>
 <script>
+    const app = new Vue();
+    app.$mount('#app');
+
     $(document).ready(function () {
         $('#main-table').DataTable( {
             language: {

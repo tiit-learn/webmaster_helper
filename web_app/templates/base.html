@@ -70,14 +70,19 @@
               {% if g.user %}
 
                 
-                <a class="button" >
+                <a class="button" href="{{ url_for('mails.index') }}">
                   <span class="icon">
                     <i class="fas fa-user"></i>
                   </span>
                   <span>
                     {{ g.user.user_name }}
                   </span>
+                  <div class="ml-3 tags has-addons">
+                    <span class="tag is-dark"><i class="fas fa-inbox mr-1"></i>{{ g.mails }}</span>
+                    <span class="tag is-success"><i class="fas fa-reply mr-1"></i>{{ g.new_mails }}</span>
+                  </div>
                 </a>
+
                 <a class="button is-danger" href="{{ url_for('auth.logout') }}">
                   <strong>Выход</strong>
                 </a>
