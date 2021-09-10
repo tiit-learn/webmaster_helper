@@ -47,6 +47,7 @@ async def get_pyppe():
     from pyppeteer import launch
     from pyppeteer_stealth import stealth
 
+    proxy = False
     if os.getenv('PROXY_WORK') and os.getenv('PROXIE_DOMAIN'):
         proxy = True
         proxy_domain = 'http://%s:%s' % (os.getenv('PROXIE_DOMAIN'),
@@ -348,3 +349,48 @@ async def get_seo_data(url_data):
 
     except Exception:
         print('ОШИБИЩЕ')
+
+
+async def check_post_on_site(site, session):
+    from web_app.funcs import save_to_db_check_post as save_to_db
+
+    print(site['published_link'])
+    result = {
+        'date': time.time(),
+        'status': None
+    }
+    url = 'http://' + site['published_link']
+
+    browser = await session.browser.newPage()
+    page = await browser.goto(url)
+    html = await page.text()
+    html = requests_html.HTML(html=html, async_=True)
+
+    if html.xpath(f'//a[contains(@href, {os.getenv("WORK_SITE")})]'):
+        result = {
+            'date': time.time(),
+            'status': True
+        }
+
+    save_to_db(site['id'], result)
+
+
+async def check_post(pages_list):
+    """
+    Function try load page with published post and try find needed url on page.
+    After checking url on page, function save status to DB and update
+    date check.
+
+    Parameters:
+        pages_list (set): set of pages with published post.
+    """
+    if not os.getenv("WORK_SITE"):
+        raise ValueError(
+            'Please set the "WORK_SITE" variable in your environment')
+
+    session = await get_pyppe()
+    try:
+        coros = [check_post_on_site(site, session) for site in pages_list]
+        await asyncio.gather(*coros)
+    except Exception as err:
+        print('Ошибка в (check_post)', err)

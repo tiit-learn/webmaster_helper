@@ -14,7 +14,7 @@ from flask import (
 from flask.cli import with_appcontext
 
 from system import mail_funcs
-from system.functions import get_seo_data
+from system.functions import get_seo_data, check_post
 
 bp = Blueprint('funcs', __name__)
 
@@ -26,6 +26,25 @@ def get_db():
     )
     db.row_factory = sqlite3.Row
     return db
+
+
+def save_to_db_check_post(id, check_data):
+    tries = 0
+    db = get_db()
+    while tries < 5:
+        try:
+            db.execute(
+                'UPDATE sites SET last_check = ? WHERE id = ?', (json.dumps(check_data),
+                                                                 id)
+            )
+        except Exception as err:
+            print('Ошибка БД:', err)
+            time.sleep(random.randint(1, 5))
+        else:
+            db.commit()
+            break
+        finally:
+            tries += 1
 
 
 def save_seo_to_db(id, site_data, whois_data):
@@ -139,9 +158,8 @@ async def get_sites_data(sites):
             print(f'Обработка {num} из {len(sites)}')
             coros = [get_seo_data(site) for site in batch]
             await asyncio.gather(*coros)
-            # await asyncio.sleep(random.randint(1,5))
-    except:
-        print('Ошибка в (get_sites_data)')
+    except Exception as err:
+        print('Ошибка в (get_sites_data)', err)
 
 
 def site_data():
@@ -155,11 +173,35 @@ def site_data():
     try:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(get_sites_data(sites))
-    except:
-        print('Ошибка в (site_data)')
+    except Exception as err:
+        print('Ошибка в (site_data)', err)
 
     end = time.perf_counter()
-    print(f'Finished at {end - start}s')
+    print(f'Finished collect site data at {end - start}s')
+
+
+def get_checking_links():
+    """
+    Do DB query to get all pages for checking link on page.
+    """
+    start = time.perf_counter()
+    db = get_db()
+    pages_list = db.execute(
+        'SELECT id, domain, published_link FROM sites WHERE published_link NOT NULL;'
+    ).fetchall()
+
+    # Setup proxy
+    os.environ["PROXY_WORK"] = "1"
+    proxy_setup()
+
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(check_post(pages_list))
+    except Exception as err:
+        print('Ошибка в (get_checking_links)', err)
+
+    end = time.perf_counter()
+    print(f'Finished checking at {end - start}s')
 
 
 def get_mails():
@@ -188,3 +230,16 @@ def get_mails_command():
 def get_mails_cli(app):
     app.app_context()
     app.cli.add_command(get_mails_command)
+
+
+# TODO: Create checking for only one site with arguments in CLI
+@click.command('check-posts')
+@with_appcontext
+def check_posts_command():
+    click.echo('Checking posts on the sites')
+    get_checking_links()
+
+
+def check_posts_cli(app):
+    app.app_context()
+    app.cli.add_command(check_posts_command)

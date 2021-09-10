@@ -104,5 +104,6 @@ def create_app(test_config=None):
     db.init_app(app)
     funcs.get_data_cli(app)
     funcs.get_mails_cli(app)
+    funcs.check_posts_cli(app)
 
     return app

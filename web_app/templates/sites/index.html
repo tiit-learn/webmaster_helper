@@ -131,11 +131,22 @@
             </th>
             <th>
                 {% if site.published %}
-                <a href="https://{{ site.published_link }}"><span class="tag mb-1 is-info is-light"><i class="fas fa-calendar-alt mr-1"></i>{{ site.published | strftime }}</span></a><br>
+                <a href="http://{{ site.published_link }}"><span class="tag mb-1 is-info is-light"><i class="fas fa-calendar-alt mr-1"></i>{{ site.published | strftime }}</span></a><br>
                     {% if site.last_check %}
-                    <span class="tag is-info is-light">{{ site.last_check }}</span>
+                        <b-tooltip class="tag is-
+                            {%- if site.last_check.status -%}success
+                            {%- else -%}danger
+                            {%- endif -%}" label="Last check {{ site.last_check.date | strftime }}" type="is-dark" size="is-small">
+                            {% if site.last_check.status %}
+                                <i class="fas fa-check-square"></i> Find
+                            {% else %}
+                                <i class="fas fa-ban"></i> Error
+                            {% endif %}
+                        </b-tooltip>
                     {% else %}
-                    <span class="tag is-info is-danger">Не проверял</span>
+                        <b-tooltip class="tag is-warning" label="Not check post yet" type="is-dark" size="is-small">
+                            <i class="fas fa-exclamation-triangle"></i> Dont check
+                        </b-tooltip>
                     {% endif %}
                 {% else %}
                 -
@@ -152,7 +163,7 @@
                         <b-tooltip label="{%- if site.last_contact_date.status == 'pending' -%}Waiting for response type
                                         {%- elif site.last_contact_date.status == 'bad_condition' -%}Bad conditions
                                         {%- elif site.last_contact_date.status == 'not_publishing' -%}Fail. Not published post
-                                        {%- else -%}Waiting for response
+                                        {%- else -%}Publish
                                         {%- endif -%}"
                                     class="tag is-
                                         {%- if site.last_contact_date.status == 'pending' -%}warning
@@ -190,10 +201,12 @@
 
                   <div class="control mt-1">
                     <div class="tags has-addons">
-                      <span class="tag is-dark"><i class="fas fa-inbox mr-1"></i>{{ site.mail_count }}</span>
-                      {% if site.new_mail_count %}
-                      <span class="tag is-success"><i class="fas fa-reply mr-1"></i>+{{ site.new_mail_count }}</span>
-                      {% endif %}
+                        <span class="tag is-dark"><i class="fas fa-inbox mr-1"></i>{{ site.mail_count }}</span>
+                            {% if site.new_mail_count %}
+                            <b-tooltip class="tag is-success" label="New mails" type="is-dark" size="is-small">
+                                <i class="fas fa-reply mr-1"></i>+{{ site.new_mail_count }}
+                            </b-tooltip>
+                            {% endif %}
                     </div>
                   </div>
 

@@ -59,6 +59,8 @@ def index():
             if site['last_contact_date']:
                 site['last_contact_date'] = json.loads(
                     site['last_contact_date'])
+            if site['last_check']:
+                site['last_check'] = json.loads(site['last_check'])
 
     return render_template('sites/index.html', sites=sites)
 
