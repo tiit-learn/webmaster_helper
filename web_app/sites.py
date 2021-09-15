@@ -242,26 +242,37 @@ def contact(id):
 
     if request.method == 'POST':
         print(request.form)
+
         if request.form['contact_type']:
             type_contact, contact = request.form['contact_type'].split(':')
-            date = time.time()
-            # TODO: Create fix all sending mails, not only mails
+            contact_text = ' '.join(
+                [request.form['mail_title'], request.form['mail_text']])
+            contact_date = time.time()
+
             if type_contact == 'mail':
-                uniq_gen = f'SEND_WH_{int(date)}'
+                uniq_gen = f'SEND_WH_{int(contact_date)}'
                 title, body = (
                     request.form['mail_title'], request.form['mail_text'])
                 assert mail_funcs.send_mail(contact, title, body)
 
-                save_to_db('SEND', date,
-                           f'{int(date)}@mail.yandex.ru', uniq_gen,
+                save_to_db('SEND', contact_date,
+                           f'{int(contact_date)}@mail.yandex.ru', uniq_gen,
                            contact, os.environ.get('MAIL_USER'),
                            title, body)
 
             last_contact_date = json.dumps({
-                'date': date,
+                'date': contact_date,
                 'status': 'pending'
             })
+
+            # TODO: Incapsule to some function
             db = get_db()
+            db.execute(
+                'INSERT INTO contact_history (site_id, contact_type,'
+                'contact, contact_text, contact_date)'
+                'VALUES (?, ?, ?, ?, ?)', (id, type_contact,
+                                           contact, contact_text, contact_date)
+            )
             db.execute(
                 'UPDATE sites SET last_contact_date = ?'
                 'WHERE id = ?', (last_contact_date, id)
@@ -280,6 +291,11 @@ def contact(id):
         'SELECT patterns FROM settings'
         ' WHERE user_id == ?', (str(g.user['id']))
     ).fetchone()
+
+    contact_history = get_db().execute(
+        'SELECT * FROM contact_history'
+        ' WHERE site_id == ?', (id,)
+    ).fetchall()
 
     if pattern:
         pattern = dict(pattern)['patterns']
@@ -301,28 +317,38 @@ def contact(id):
         if contact[0] == 'mail':
             emails.append(contact[1])
 
-    # TODO: Add all emails to SQL query. Now send only emails[0]
     def delete_answer_in_mail(raws):
         """
         Delete answer in mails.
         Return dict with all raws
+
+        RegEx searching template like:
+            Среда, 13 февраля 2019
         """
         raws['body'] = re.sub(
-            r'\s((\d{2}.\d{2}.\d{4}.*)|(\w{2},\s\d{1,2}\s\w{2,3}.*))', '', raws['body'])
+            r'\s((\d{2}.\d{2}.\d{4}.*)|(\w{2},\s\d{1,2}\s\w{2,3}.*)|\w{3,},\s\d{2}.*\d{4}.*)', '', raws['body'])
         return raws
 
+    # TODO: Show mail status
+    # TODO: Change mail status with AJAX or something else
+
     mails_send = get_db().execute(
-        'SELECT * FROM mails WHERE to_name == ? AND mail_box == ? ORDER BY mail_date DESC', (emails[0], 'SEND')).fetchall() if emails else []
+        f"SELECT * FROM mails WHERE to_name IN ({','.join(['?']*len(emails))}) AND mail_box == ? ORDER BY mail_date DESC", (*emails, 'SEND')).fetchall() if emails else []
     mails_send = [delete_answer_in_mail(dict(sql_raw))
                   for sql_raw in mails_send]
     mails_received = get_db().execute(
-        'SELECT * FROM mails WHERE from_name == ? AND mail_box == ? ORDER BY mail_date DESC', (emails[0], 'INBOX')).fetchall() if emails else []
+        f"SELECT * FROM mails WHERE from_name IN ({', '.join(['?']*len(emails))}) AND mail_box == ? ORDER BY mail_date DESC", (*emails, 'INBOX')).fetchall() if emails else []
     mails_received = [delete_answer_in_mail(dict(sql_raw))
                       for sql_raw in mails_received]
+
+    mails = sorted(mails_send + mails_received,
+                   key=lambda x: x['mail_date'], reverse=True)
 
     return render_template('sites/contact.html',
                            site=site,
                            contacts=contacts,
+                           contact_history=contact_history,
                            pattern=pattern,
                            mails_send=mails_send,
-                           mails_received=mails_received)
+                           mails_received=mails_received,
+                           mails=mails)
