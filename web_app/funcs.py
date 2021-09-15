@@ -14,7 +14,7 @@ from flask import (
 from flask.cli import with_appcontext
 
 from system import mail_funcs
-from system.functions import get_seo_data, check_post
+from system.functions import check_post, get_sites_data, proxy_setup
 
 bp = Blueprint('funcs', __name__)
 
@@ -125,43 +125,6 @@ def save_mails_to_db(mail_box, mail_date, id_msg, uniq_gen, to_email, from_email
             tries += 1
 
 
-async def proxy_setup():
-    if not os.path.exists('proxies.txt'):
-        print('Proxies don\'t found')
-        os.environ["PROXY_WORK"] = ""
-    else:
-        with open('proxies.txt') as file:
-            lines = file.readlines()
-            proxy = random.choice(lines)
-            os.environ['FULL_PROXY_LINK'] = proxy
-            user_name, *_, port = proxy.split(':')
-            password, _ = _[0].split('@z')
-            proxy_domain = 'z' + _
-            os.environ['PROXIE_DOMAIN'] = proxy_domain
-            os.environ['PROXIE_PORT'] = port
-            os.environ['PROXIE_USERNAME'] = user_name
-            os.environ['PROXIE_PASSWORD'] = password
-
-
-async def get_sites_data(sites):
-    if os.getenv('PROXY_WORK'):
-        await proxy_setup()
-
-    sites_iter = iter(sites)
-    try:
-        num = 0
-        while True:
-            batch = tuple(itertools.islice(sites_iter, 50))
-            if not batch:
-                break
-            num += 50
-            print(f'Обработка {num} из {len(sites)}')
-            coros = [get_seo_data(site) for site in batch]
-            await asyncio.gather(*coros)
-    except Exception as err:
-        print('Ошибка в (get_sites_data)', err)
-
-
 def site_data():
     # Установка флага работы через прокси. 1 - работать с прокси
     os.environ["PROXY_WORK"] = "1"
@@ -175,7 +138,6 @@ def site_data():
         loop.run_until_complete(get_sites_data(sites))
     except Exception as err:
         print('Ошибка в (site_data)', err)
-
     end = time.perf_counter()
     print(f'Finished collect site data at {end - start}s')
 
@@ -187,18 +149,24 @@ def get_checking_links():
     start = time.perf_counter()
     db = get_db()
     pages_list = db.execute(
-        'SELECT id, domain, published_link FROM sites WHERE published_link NOT NULL;'
+        'SELECT id, domain, published_link, last_check FROM sites WHERE published_link NOT NULL;'
     ).fetchall()
-
     # Setup proxy
     os.environ["PROXY_WORK"] = "1"
-    proxy_setup()
-
-    try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(check_post(pages_list))
-    except Exception as err:
-        print('Ошибка в (get_checking_links)', err)
+    # Get all page_list who have't check date and last check date older then
+    # 84600 (1 day)
+    pages_list = [page for page in pages_list if not page['last_check'] or (
+        time.time() - json.loads(page['last_check'])['date']) > 84600]
+    
+    if pages_list:
+        try:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(proxy_setup())
+            loop.run_until_complete(check_post(pages_list))
+        except Exception as err:
+            print('Ошибка в (get_checking_links)', err)
+    else:
+        print('Наличие ссылок уже проверялось.')
 
     end = time.perf_counter()
     print(f'Finished checking at {end - start}s')

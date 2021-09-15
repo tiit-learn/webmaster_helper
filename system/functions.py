@@ -1,5 +1,7 @@
 import asyncio
+import itertools
 import os
+import random
 import re
 import requests_html
 import time
@@ -8,6 +10,24 @@ import platform
 import subprocess
 
 from fake_headers import Headers
+
+
+async def proxy_setup():
+    if not os.path.exists('proxies.txt'):
+        print('Proxies don\'t found')
+        os.environ["PROXY_WORK"] = ""
+    else:
+        with open('proxies.txt') as file:
+            lines = file.readlines()
+            proxy = random.choice(lines)
+            os.environ['FULL_PROXY_LINK'] = proxy
+            user_name, *_, port = proxy.split(':')
+            password, _ = _[0].split('@z')
+            proxy_domain = 'z' + _
+            os.environ['PROXIE_DOMAIN'] = proxy_domain
+            os.environ['PROXIE_PORT'] = port
+            os.environ['PROXIE_USERNAME'] = user_name
+            os.environ['PROXIE_PASSWORD'] = password
 
 
 def get_browser(_async=False):
@@ -73,6 +93,8 @@ async def get_pyppe():
             'username': os.getenv('PROXIE_USERNAME'),
             'password': os.getenv('PROXIE_PASSWORD')
         })
+    await page.goto('https://2ip.ru')
+
     return page
 
 
@@ -204,12 +226,8 @@ def get_whois(url, whois_data):
 
 async def get_seo_data(url_data):
     """
-    Функция получения seo данных для указанного сайта. Возвращает строку JSON.
-    {
-        'Alexa': 1,
-        'Яндекс ИКС': 10000,
-        ...
-    }
+    Функция получения seo данных для указанного сайта. Полученные данные
+    сохраняет в БД.
     """
     # TODO: Create 1 puppeteer chrome window. For all services need create tabs.
     # TODO: Refactoring code
@@ -247,6 +265,7 @@ async def get_seo_data(url_data):
                     else:
                         result['alexa'] = {
                             'data': None, 'timedata': time.time()}
+                    response.close()
 
         async def get_simularweb():
             if not result.get('simularweb') or (result.get('simularweb') and (time.time() - result['simularweb']['timedata'] > 864000)):
@@ -277,6 +296,7 @@ async def get_seo_data(url_data):
                         print(url, title, '- NOT FOUND')
                         result['simularweb'] = {
                             'data': None, 'timedata': time.time()}
+                    await page.close()
 
         async def get_moz():
             if not result.get('moz') or (result.get('moz') and (time.time() - result['moz']['timedata'] > 864000)):
@@ -308,6 +328,7 @@ async def get_seo_data(url_data):
                         result['moz'] = {'data': val, 'timedata': time.time()}
                     else:
                         result['moz'] = {'data': None, 'timedata': time.time()}
+                    await page.close()
 
         async def yandex_x():
             if not result.get('yandex_x') or (result.get('yandex_x') and (time.time() - result['yandex_x']['timedata'] > 864000)):
@@ -333,8 +354,9 @@ async def get_seo_data(url_data):
                         print(url, 'Yandex - NOT FOUND')
                         result['yandex_x'] = {
                             'data': None, 'timedata': time.time()}
+                    response.close()
+
         try:
-            # TODO: search error 'Future exception was never retrieved'
             await asyncio.gather(
                 get_alexa(),
                 get_simularweb(),
@@ -351,6 +373,28 @@ async def get_seo_data(url_data):
         print('ОШИБИЩЕ')
 
 
+async def get_sites_data(sites):
+    if os.getenv('PROXY_WORK'):
+        await proxy_setup()
+    # TODO: Incapsule THIS №1
+    sites_iter = iter(sites)
+    try:
+        num = 0
+        while True:
+            batch = tuple(itertools.islice(sites_iter, 20))
+            if not batch:
+                break
+            if not ((num + 20) > len(sites)):
+                num += 20
+            else:
+                num = len(sites)
+            print(f'Обработка {num} из {len(sites)}')
+            coros = [get_seo_data(site) for site in batch]
+            await asyncio.gather(*coros)
+    except Exception as err:
+        print('Ошибка в (get_sites_data)', err)
+
+
 async def check_post_on_site(site, session):
     from web_app.funcs import save_to_db_check_post as save_to_db
 
@@ -362,17 +406,21 @@ async def check_post_on_site(site, session):
     url = 'http://' + site['published_link']
 
     browser = await session.browser.newPage()
-    page = await browser.goto(url)
-    html = await page.text()
-    html = requests_html.HTML(html=html, async_=True)
-
-    if html.xpath(f'//a[contains(@href, {os.getenv("WORK_SITE")})]'):
-        result = {
-            'date': time.time(),
-            'status': True
-        }
-
-    save_to_db(site['id'], result)
+    try:
+        await browser.goto(url)
+    except Exception as err:
+        print('Ошибка:', err)
+    else:
+        # WARNING: Need waiting for browser checker in some sites
+        await asyncio.sleep(15)
+        html = await browser.evaluate('document.documentElement.outerHTML', force_expr=True)
+        html = requests_html.HTML(html=html, async_=True)
+        if html.xpath(f'//a[contains(@href, {os.getenv("WORK_SITE")})]'):
+            result = {
+                'date': time.time(),
+                'status': True
+            }
+        save_to_db(site['id'], result)
 
 
 async def check_post(pages_list):
@@ -384,13 +432,25 @@ async def check_post(pages_list):
     Parameters:
         pages_list (set): set of pages with published post.
     """
+    # TODO: Incapsule THIS №1
     if not os.getenv("WORK_SITE"):
         raise ValueError(
             'Please set the "WORK_SITE" variable in your environment')
 
     session = await get_pyppe()
+    sites_iter = iter(pages_list)
     try:
-        coros = [check_post_on_site(site, session) for site in pages_list]
-        await asyncio.gather(*coros)
+        num = 0
+        while True:
+            batch = tuple(itertools.islice(sites_iter, 20))
+            if not batch:
+                break
+            if not ((num + 20) > len(pages_list)):
+                num += 20
+            else:
+                num = len(pages_list)
+            print(f'Обработка {num} из {len(pages_list)}')
+            coros = [check_post_on_site(site, session) for site in batch]
+            await asyncio.gather(*coros)
     except Exception as err:
         print('Ошибка в (check_post)', err)

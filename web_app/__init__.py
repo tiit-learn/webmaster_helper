@@ -9,7 +9,6 @@ from flask import Flask
 
 ABS_CONFIG_PATH = os.path.join(os.path.abspath('.'), 'configs')
 
-# TODO: Create checker of publishing on webmasters sites
 # TODO: Create notify of new emails
 # TODO: Create function to stop monitoring publishing on site
 
@@ -31,7 +30,7 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # TODO: Put in to separate file
+    # TODO: Put in to separate file like auth.py etc
     @app.route('/info')
     def about_us():
         return render_template('info.html')

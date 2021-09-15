@@ -11,10 +11,8 @@ DONE:
 - [x] Store data in SQLite database
 - [x] Async get seo data for sites
 - [x] Reciev mails from mail system
-
-TODO:
-- [ ] Send mails from system
-- [ ] Checking adv status in site
+- [x] Send mails from system
+- [x] Checking adv status in site
 
 ## Adding sites
 You can add any count of sites to monitor your contacts with webmasters and

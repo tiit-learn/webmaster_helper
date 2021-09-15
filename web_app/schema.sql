@@ -64,4 +64,14 @@ CREATE TABLE settings (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
+CREATE TABLE contact_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    site_id INTEGER NOT NULL,
+    contact TEXT,
+    contact_type TEXT,
+    contact_text TEXT,
+    contact_date TEXT,
+    FOREIGN KEY (site_id) REFERENCES sites (id)
+);
+
 INSERT INTO categories VALUES(0, '');
