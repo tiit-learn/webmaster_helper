@@ -155,3 +155,6 @@ dev_templates*
 
 # VSCode files
 .vscode
+
+#Configs dir
+configs
