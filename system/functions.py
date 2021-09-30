@@ -75,6 +75,11 @@ async def get_pyppe():
         setup_proxy_link = f'--proxy-server={proxy_domain}'
     browser = await launch({"headless": True,
                             'args': ['' if not proxy else setup_proxy_link,
+                                     '--no-sandbox',
+                                     '--single-process',
+                                     '--disable-dev-shm-usage',
+                                     '--disable-gpu',
+                                     '--no-zygote',
                                      '--start-maximized',
                                      '--disable-setuid-sandbox',
                                      '--disable-infobars',
@@ -93,7 +98,7 @@ async def get_pyppe():
             'username': os.getenv('PROXIE_USERNAME'),
             'password': os.getenv('PROXIE_PASSWORD')
         })
-    await page.goto('https://2ip.ru')
+    await page.goto('https://google.com')
 
     return page
 
@@ -115,7 +120,7 @@ def remove_http(url):
     конечный слеш в конце строки.
     """
     pattern = r'\/$|http(s)?\:\/\/|www\.'
-    url = re.sub(pattern, '', url)
+    url = re.sub(pattern, '', url).lower().strip()
     return url
 
 
@@ -142,6 +147,16 @@ def get_whois_rows(domain):
             'organization': 'person',
             'registrar': 'registrar'
         }
+    elif _domain in ('su'):
+        rows = {
+            'name_servers': 'nserver',
+            'create_date': 'created',
+            'end_date': 'free-date',
+            'emails': 'e-mail',
+            'organization': 'person',
+            'registrar': 'registrar'
+        }
+
     return rows
 
 
@@ -149,17 +164,17 @@ def parse_whois_data(domain, whois_data):
 
     domain_rows = get_whois_rows(domain)
     name_servers = set([i.lower().strip() for i in re.findall(
-        rf'(?<={domain_rows["name_servers"]}:\s).+?(?=\r)', whois_data)])
+        rf'(?<={domain_rows["name_servers"]}:\s).+?(?=\r|\n)', whois_data)])
     create_date = set([i.lower().strip() for i in re.findall(
-        rf'(?<={domain_rows["create_date"]}:\s).+?(?=\r)', whois_data)])
+        rf'(?<={domain_rows["create_date"]}:\s).+?(?=\r|\n)', whois_data)])
     end_date = set([i.lower().strip() for i in re.findall(
-        rf'(?<={domain_rows["end_date"]}:\s).+?(?=\r)', whois_data)])
+        rf'(?<={domain_rows["end_date"]}:\s).+?(?=\r|\n)', whois_data)])
     emails = set([i.lower().strip() for i in re.findall(
-        rf'(?<={domain_rows["emails"]}:\s).+?(?=\r)', whois_data)])
+        rf'(?<={domain_rows["emails"]}:\s).+?(?=\r|\n)', whois_data)])
     organization = set([i.lower().strip() for i in re.findall(
-        rf'(?<={domain_rows["organization"]}:\s).+?(?=\r)', whois_data)])
+        rf'(?<={domain_rows["organization"]}:\s).+?(?=\r|\n)', whois_data)])
     registrar = set([i.lower().strip() for i in re.findall(
-        rf'(?<={domain_rows["registrar"]}:\s).+?(?=\r)', whois_data)])
+        rf'(?<={domain_rows["registrar"]}:\s).+?(?=\r|\n)', whois_data)])
 
     return (tuple(name_servers),
             tuple(create_date),
@@ -189,18 +204,16 @@ def get_whois(url, whois_data):
                     copy_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             result = subprocess.run(
                 [r'.\whois.exe', url], stdout=subprocess.PIPE)
+            if result.returncode != 0 and result.returncode != 1:
+                print('Что то не так!', url)
 
+            result = result.stdout.decode('utf-8')
         else:
             """
                 Linux 'whois' command wrapper
             """
-            result = subprocess.Popen(['whois', '.'.join(url)],
-                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        if result.returncode != 0 and result.returncode != 1:
-            print('Что то не так!', url)
-
-        result = result.stdout.decode('utf-8')
+            result = subprocess.Popen(['whois', url], stdout=subprocess.PIPE, encoding='UTF-8')
+            result = result.stdout.read()
 
         (name_servers,
          create_date,
@@ -296,7 +309,8 @@ async def get_seo_data(url_data):
                         print(url, title, '- NOT FOUND')
                         result['simularweb'] = {
                             'data': None, 'timedata': time.time()}
-                    await page.close()
+                finally:
+                    await page.browser.close()
 
         async def get_moz():
             if not result.get('moz') or (result.get('moz') and (time.time() - result['moz']['timedata'] > 864000)):
@@ -328,7 +342,8 @@ async def get_seo_data(url_data):
                         result['moz'] = {'data': val, 'timedata': time.time()}
                     else:
                         result['moz'] = {'data': None, 'timedata': time.time()}
-                    await page.close()
+                finally:
+                    await page.browser.close()
 
         async def yandex_x():
             if not result.get('yandex_x') or (result.get('yandex_x') and (time.time() - result['yandex_x']['timedata'] > 864000)):
@@ -363,42 +378,31 @@ async def get_seo_data(url_data):
                 get_moz(),
                 yandex_x()
             )
+            # TODO: Create new function for getting whois data.
             whois_data = await asyncio.get_event_loop().run_in_executor(None, get_whois, url, url_data['whois_data'])
         except Exception as err:
             print('Ошибка в (get_seo_data) %s: %s' % (url, err))
         else:
             await asyncio.get_event_loop().run_in_executor(None, save_to_db, url_data['id'], result, whois_data)
 
-    except Exception:
-        print('ОШИБИЩЕ')
+    except Exception as err:
+        print('ОШИБИЩЕ', err)
 
 
 async def get_sites_data(sites):
     if os.getenv('PROXY_WORK'):
         await proxy_setup()
     # TODO: Incapsule THIS №1
-    sites_iter = iter(sites)
     try:
-        num = 0
-        while True:
-            batch = tuple(itertools.islice(sites_iter, 20))
-            if not batch:
-                break
-            if not ((num + 20) > len(sites)):
-                num += 20
-            else:
-                num = len(sites)
-            print(f'Обработка {num} из {len(sites)}')
-            coros = [get_seo_data(site) for site in batch]
-            await asyncio.gather(*coros)
+        coros = [get_seo_data(site) for site in sites]
+        await asyncio.gather(*coros)
     except Exception as err:
         print('Ошибка в (get_sites_data)', err)
 
 
 async def check_post_on_site(site, session):
     from web_app.funcs import save_to_db_check_post as save_to_db
-
-    print(site['published_link'])
+    print(f'Обработка - {site["published_link"]}')
     result = {
         'date': time.time(),
         'status': None
@@ -409,7 +413,7 @@ async def check_post_on_site(site, session):
     try:
         await browser.goto(url)
     except Exception as err:
-        print('Ошибка:', err)
+        print(f'Ошибка ({url}): {err}')
     else:
         # WARNING: Need waiting for browser checker in some sites
         await asyncio.sleep(15)
@@ -438,19 +442,37 @@ async def check_post(pages_list):
             'Please set the "WORK_SITE" variable in your environment')
 
     session = await get_pyppe()
-    sites_iter = iter(pages_list)
+
     try:
-        num = 0
-        while True:
-            batch = tuple(itertools.islice(sites_iter, 20))
-            if not batch:
-                break
-            if not ((num + 20) > len(pages_list)):
-                num += 20
-            else:
-                num = len(pages_list)
-            print(f'Обработка {num} из {len(pages_list)}')
-            coros = [check_post_on_site(site, session) for site in batch]
-            await asyncio.gather(*coros)
+        coros = [check_post_on_site(site, session) for site in pages_list]
+        await asyncio.gather(*coros)
     except Exception as err:
         print('Ошибка в (check_post)', err)
+
+def effective_count(site_data):
+    """
+    Function recal all seo datas and return effective number of publishing.
+    """
+    print(site_data['domain'], end=" ")
+    simularweb, alexa, moz, yandex_x, simular_search_source = 0,0,0,0,0
+    if site_data['seo_data'] and site_data['price']:
+        if (simularweb := site_data['seo_data'].get('simularweb', 0)):
+            simular_search_source = simularweb['data']['TrafficSources']['Search']
+            if isinstance(site_data['price'], str):
+                site_data['price'] = float(site_data['price'].replace(',', '.'))
+            simularweb = (10000000-simularweb['data']['GlobalRank'][0])/site_data['price']/1000000
+        if (alexa := site_data['seo_data'].get('alexa', 0)):
+            if alexa['data']:
+                alexa = (10000000-alexa['data']['rank']['global'])/site_data['price']/1000000 
+            else:
+                alexa = 0
+        if (moz := site_data['seo_data'].get('moz', 0)):
+            if (moz := moz.get('data', 0)):
+                moz = int(moz['da'])/site_data['price']
+            else:
+                moz = 0
+        if (yandex_x := site_data['seo_data'].get('yandex_x', 0)):
+            if (yandex_x := yandex_x['data'].get('quality', 0)):
+                yandex_x = yandex_x['achievements'][-1]['sqi']/site_data['price']/10
+    
+    return ((simularweb + alexa + moz + yandex_x) + ((simularweb + alexa + moz + yandex_x) * simular_search_source))

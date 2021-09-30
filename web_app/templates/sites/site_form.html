@@ -178,6 +178,7 @@
     <div class="field select" id="contact_status" style="{% if not site.last_contact_date %}display:none{% endif %}">
       <select name="contact_status">
         <option value="pending" {% if site.last_contact_date.status == 'pending' %}selected{% endif %}>Ожидаю ответ</option>
+        <option value="waite_publishing" {% if site.last_contact_date.status == 'waite_publishing' %}selected{% endif %}>Ожидаю размещения</option>
         <option value="publishing" {% if site.last_contact_date.status == 'publishing' %}selected{% endif %}>Размещает</option>
         <option value="bad_condition" {% if site.last_contact_date.status == 'bad_condition' %}selected{% endif %}>Плохие условия</option>
         <option value="not_publishing" {% if site.last_contact_date.status == 'not_publishing' %}selected{% endif %}>Не размещает</option>

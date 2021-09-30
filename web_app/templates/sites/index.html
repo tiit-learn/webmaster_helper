@@ -5,50 +5,81 @@
 {% endblock %}
 
 {% block content %}
-
-{% if g.user %}
-<div>
-    <a class="button is-success" href="{{ url_for('sites.add_site') }}">Добавить сайт</a>
+<div id="app" class="container">
+   <div class="field has-addons">
+	<div class="control is-expanded">
+		<input v-model="message" class="input" type="text" placeholder="Find a site">
+	</div>
+	<div class="control" href="">
+		<a class="button is-info" :href="'?search=' + message">Search</a>
+	</div>
+    </div>
+    <hr>
+<div class="level">
+    {% if g.user %}
+    <div class="level-left">
+        <a class="button is-success" href="{{ url_for('sites.add_site') }}">Добавить сайт</a>
+    </div>
+    {% endif %}
+    <div class="level-right">
+        <b-tooltip class="mr-1" label="New mails" type="is-dark" size="is-small">
+		<a class="button is-success level-item" href="{{ url_for('sites.index') }}?status=new_mails"><i class="fas fa-reply"></i></a>
+        </b-tooltip>
+        <b-tooltip class="mr-1" label="Not contact yet" type="is-dark" size="is-small">
+            <a class="button is-light level-item" href="{{ url_for('sites.index') }}?status=not_contact"><i class="fas fa-ellipsis-h"></i></a>
+        </b-tooltip>
+	<b-tooltip class="mr-1" label="Waiting for response type" type="is-dark" size="is-small">
+            <a class="button is-warning level-item" href="{{ url_for('sites.index') }}?status=pending"><i class="fas fa-hourglass-half"></i></a>
+        </b-tooltip>
+        <b-tooltip class="mr-1" label="Can Publish" type="is-dark" size="is-small">
+            <a class="button is-info level-item" href="{{ url_for('sites.index') }}?status=can_publish"><i class="fas fa-check-circle"></i></a>
+        </b-tooltip>
+        <b-tooltip class="mr-1" label="Waite publish" type="is-dark" size="is-small">
+            <a class="button is-info is-success is-light level-item" href="{{ url_for('sites.index') }}?status=waite_publishing"><i class="fas fa-stopwatch"></i></a>
+        </b-tooltip>
+        <b-tooltip class="mr-1" label="Publish done" type="is-dark" size="is-small">
+            <a class="button is-success level-item" href="{{ url_for('sites.index') }}?status=publishing"><i class="fas fa-check"></i></a>
+        </b-tooltip>
+        <b-tooltip class="mr-1" label="Bad conditions and not published" type="is-dark" size="is-small">
+            <a class="button is-danger level-item" href="{{ url_for('sites.index') }}?status=bad_condition"><i class="fas fa-times-circle"></i></a>
+        </b-tooltip>
+    </div>
 </div>
+
 <hr>
-{% endif %}
 
 {% if sites %}
 
-<!-- <div class="notification is-primary is-light">
-    <h3>Доступные поля таблицы</h3>
-    <hr>
-    {% for title in sites[0].keys() %}
-    <span class="tag is-white">{{ title }}</span>
-    {% endfor %}
-</div> -->
-<div id="app" class="container">
 
 <table class="table box" id="main-table">
     <thead>
         <tr>
             <th>Домен</th>
-            <!-- <th>Кат</th> -->
             <th>Вебмастер</th>
             <th>SEO</th>
             <th>Метрики</th>
             <th>Whois</th>
-            <th>Стоимость</th>
+            <th>Стоим.</th>
+            <th>Эфф.</th>
             <th>Дата публикации</th>
-            <th style="min-width: 110px">Дата контакта</th>
-
+            <th>Дата контакта</th>
             {% if g.user %}
-            <th style="min-width: 110px">Действия</th>
+            <th>Действия</th>
             {% endif %}
         </tr>
     </thead>
     <tbody class="is-size-7">
 
         {% for site in sites %}
+        {% set similarweb, alexa, moz, yandex_x = 0,0,0,0 %}
+        {% set ns = namespace() %}
+        {% set ns.simular_source_search = 0 %}
         <tr class="{%- if site.last_contact_date.status == 'pending' -%}
                     has-background-warning-light
                    {%- elif site.last_contact_date.status == 'publishing' -%}
                     has-background-success-light
+		   {%- elif site.last_contact_date.status == 'waite_publishing' -%}
+		    has-background-warning-light
                    {%- elif site.last_contact_date.status == 'bad_condition' -%}
                     has-background-danger-light
                    {%- elif site.last_contact_date.status == 'not_publishing' -%}
@@ -79,11 +110,11 @@
             {% else %}
             -
             {% endif %}
-            <th style="min-width: 150px; overflow-wrap: break-word;">
+            <th style="min-width: 130px; overflow-wrap: break-word;">
                 {% if site.seo_data %}
                     <ul>                    
-                        {% if site.seo_data.simularweb and site.seo_data.simularweb.data %}<li class="is-size-7">Simularweb GR: {{site.seo_data.simularweb.data.GlobalRank[0]}}</li>{% endif %}
-                        {% if site.seo_data.alexa and site.seo_data.alexa.data %}<li class="is-size-7">Alexa GR: {{site.seo_data.alexa.data.rank.global}}</li>{% endif %}
+                        {% if site.seo_data.simularweb and site.seo_data.simularweb.data %}<li class="is-size-7">Simularweb GR: {{similarweb}}</li>{% endif %}
+                        {% if site.seo_data.alexa and site.seo_data.alexa.data %}<li class="is-size-7">Alexa GR: {{alexa}}</li>{% endif %}
                         {% if site.seo_data.moz and site.seo_data.moz.data %}<li class="is-size-7">MOZ DA: {{site.seo_data.moz.data.da}}</li>{% endif %}
                         {% if site.seo_data.yandex_x and site.seo_data.yandex_x.data.quality%}<li class="is-size-7">Яндекс ИКС: {{site.seo_data.yandex_x.data.quality.achievements[-1].sqi}}</li>{% endif %}
                     </ul>
@@ -92,6 +123,7 @@
                 {% endif %}
             </th>
             <th>
+                
                 {% if site.seo_data.simularweb and site.seo_data.simularweb.data %}
                 {{ (site.seo_data.simularweb.data.EngagementsSimilarweb.TotalLastMonthVisits / 30) | round | int }}
                 ({{ site.seo_data.simularweb.data.EngagementsSimilarweb.BounceRate }})
@@ -101,6 +133,7 @@
                 <ul>
                     {% for source, value in (site.seo_data.simularweb.data.TrafficSources.items() | sort(attribute='1', reverse=true))[:3]  %}
                         <li class="is-size-7">- {{ source }} - {{ (site.seo_data.simularweb.data.TrafficSources[source]*100) | round | int}}%</li>
+                        
                     {% endfor %}
                 </ul>
                 {% endif %}
@@ -124,7 +157,14 @@
             </th>
             <th>
                 {% if site.price %}
-                {{ site.price }} $
+                    {{ site.price }} $
+                {% else %}
+                -
+                {% endif %}
+            </th>
+            <th>
+                {% if site.price %}
+		    {{ site.effective_count | round}}
                 {% else %}
                 -
                 {% endif %}
@@ -152,7 +192,7 @@
                 -
                 {% endif %}
             </th>
-            <th id='notes_tooltip' style="max-width: 90px; overflow-wrap: break-word;">
+            <th id='notes_tooltip' style="max-width: 100px; overflow-wrap: break-word;">
                 {%- if site.last_contact_date -%}
                     <span class="tag is-info is-light"><i class="fas fa-calendar-alt mr-1"></i>{{ site.last_contact_date.date | strftime  }}</span>
                 {%- endif -%}
@@ -163,13 +203,17 @@
                         <b-tooltip label="{%- if site.last_contact_date.status == 'pending' -%}Waiting for response type
                                         {%- elif site.last_contact_date.status == 'bad_condition' -%}Bad conditions
                                         {%- elif site.last_contact_date.status == 'not_publishing' -%}Fail. Not published post
-                                        {%- else -%}Publish
+                                        {%- elif site.last_contact_date.status == 'publishing' and site.published -%}Publish done
+                                        {%- elif site.last_contact_date.status == 'waite_publishing' -%}Waite publish
+                                        {%- else -%}Can Publish
                                         {%- endif -%}"
                                     class="tag is-
                                         {%- if site.last_contact_date.status == 'pending' -%}warning
                                         {%- elif site.last_contact_date.status == 'bad_condition' -%}warning
                                         {%- elif site.last_contact_date.status == 'not_publishing' -%}danger
-                                        {%- else -%}success
+                                        {%- elif site.last_contact_date.status == 'publishing' and site.published -%}success
+                                        {%- elif site.last_contact_date.status == 'waite_publishing' -%}success is-light
+                                        {%- else -%}info
                                         {%- endif -%}"
                                     size="is-small">
                             {%- if site.last_contact_date.status == 'pending' -%}
@@ -178,6 +222,10 @@
                                 <i class="fas fa-exclamation-triangle"></i>
                             {%- elif site.last_contact_date.status == 'not_publishing' -%}
                                 <i class="fas fa-times-circle"></i>
+			    {%- elif site.last_contact_date.status == 'waite_publishing' -%}
+                                <i class="fas fa-stopwatch"></i>
+		            {%- elif site.last_contact_date.status == 'publishing' and not site.published -%}
+                                <i class="fas fa-check-circle"></i>
                             {%- else -%}
                                 <i class="fas fa-check"></i>                    
                             {%- endif -%}
@@ -213,7 +261,7 @@
                 
             </th>
             {% if g.user %}
-            <th>
+            <th style="min-width: 110px; overflow-wrap: break-word;">
                 {% if site.contact_form_link or site.webmaster_name %}
                     <a href="{{ url_for('sites.contact', id=site.id) }}" class="tag is-warning">
                         <span class="icon">
@@ -238,33 +286,27 @@
         {% endfor %}
     </tbody>
 </table>
-
+    <nav class="pagination is-normal" role="navigation" aria-label="pagination">
+	    <a class="pagination-next" href="{{ next_url }}{%- if request.args.search -%}&search={{ request.args.search  }}{%- endif -%}{%- if request.args.status -%}&status={{ request.args.status  }}{%- endif -%}" {%- if not next_url -%}disabled{%- endif -%}>Следующая<i>→</i></a>
+	
+        <a class="pagination-previous" href="{{ prev_url }}{%- if request.args.search -%}&search={{ request.args.search  }}{%- endif -%}{%- if request.args.status -%}&status={{ request.args.status  }}{%- endif -%}" {%- if not prev_url -%}disabled{%- endif -%}><i>←</i>Предыдущая</a>
+    </nav>
 </div>
-<script>
-    const app = new Vue();
-    app.$mount('#app');
-
-    $(document).ready(function () {
-        $('#main-table').DataTable( {
-            language: {
-                emptyTable: "Нет данных для показа.",
-                search: 'Поиск по таблице:',
-                lengthMenu: "Показать _MENU_ элементов",
-                info: "Показано _START_ до _END_ из _TOTAL_ элементов",
-                paginate: {
-                            first: "Первая",
-                            last: "Последняя",
-                            next: "Следующая",
-                            previous: "Предыдущая"
-                        },
-            },
-            order: [],
-
-        });
-    });
-</script>
 {% else %}
-<h2>Не найдены</h2>
+<h2>Not found</h2>
 {% endif %}
+<script>
+    const app = new Vue(
+	{
+		data(){
+			return {
+			message: ''
+			}
+			},
+		delimiters: ['[[', ']]']
+		}
+	);
+    app.$mount('#app');
+</script>
 
 {% endblock %}

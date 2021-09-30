@@ -15,6 +15,7 @@ CREATE TABLE sites (
     seo_data TEXT,
     whois_data TEXT,
     price INTEGER,
+    effective_count INTEGER,
     published DATETIME,
     published_link TEXT,
     last_contact_date TEXT,

@@ -30,15 +30,97 @@ def get_site(id):
     return site
 
 
+@bp.route('/temp')
+def db_done():
+    db = get_db()
+    sites = db.execute('SELECT * FROM sites WHERE price NOT NULL AND price != ""').fetchall()
+    sites = [dict(site) for site in sites]
+    for site in sites:
+        if site['seo_data']:
+                site['seo_data'] = json.loads(site['seo_data'])
+        effective_count = functions.effective_count(site)
+        db.execute(
+                'UPDATE sites SET effective_count = ?'
+                'WHERE id = ?', (effective_count, site['id'])
+            )
+        db.commit()
+
+
+
 @bp.route('/')
 def index():
     db = get_db()
-    sites = db.execute(
-        'SELECT * FROM sites LEFT OUTER'
-        ' JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER'
-        ' JOIN categories AS cat ON sites.category_id = cat.id'
-        ' ORDER BY sites.id DESC;'
-    ).fetchall()
+    if request.args.get('status') == 'new_mails':
+        count_request = 'SELECT COUNT(*) FROM mails WHERE mail_box == "INBOX" AND status == "0"'
+        new_mails = db.execute('SELECT from_name FROM mails WHERE mail_box == "INBOX" AND status == "0"').fetchall()
+        all_new_mails = [f'contacts LIKE "%{mail["from_name"]}%"' for mail in new_mails]
+        sites_request = '''SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id WHERE '''
+        # TODO: Find some better idei for get all new mails from site webmaster
+        # FIXIT: If inbox have 0 mail, raise error with DB query 
+        sites_request = sites_request + ' OR '.join(all_new_mails)
+    elif request.args.get('status') == 'not_contact':
+        count_request = 'SELECT COUNT(*) FROM sites WHERE last_contact_date ISNULL'
+        sites_request = '''SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         WHERE last_contact_date ISNULL''' 
+    elif request.args.get('status') == 'can_publish':
+        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link ISNULL"""
+        sites_request = """SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link ISNULL"""
+    elif request.args.get('status') == 'publishing':
+        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link NOT NULL"""
+        sites_request = """SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link NOT NULL"""
+    elif request.args.get('status') == 'pending':
+        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "pending"%'"""
+        sites_request = """SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         WHERE last_contact_date LIKE '%"status": "pending"%'"""
+    elif request.args.get('status') == 'waite_publishing':
+        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "waite_publishing"%'"""
+        sites_request = """SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         WHERE last_contact_date LIKE '%"status": "waite_publishing"%'"""
+
+    elif request.args.get('status') == 'bad_condition':
+        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "bad_condition"%'"""
+        sites_request = """SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         WHERE last_contact_date LIKE '%"status": "bad_condition"%'"""
+    else:
+        count_request = 'SELECT COUNT(*) FROM sites'
+        sites_request = '''SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id'''
+    
+    if (search := request.args.get('search')):
+        count_request = f'SELECT COUNT(*) FROM sites WHERE domain LIKE "%{search}%"'
+        sites_request = f'''SELECT * FROM sites LEFT OUTER
+                         JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
+                         JOIN categories AS cat ON sites.category_id = cat.id WHERE domain LIKE "%{search}%" 
+                         OR web.webmaster_name LIKE "%{search}%"'''
+ 
+    count = db.execute(count_request).fetchone()['COUNT(*)']
+
+    per_page = 10  # define how many results you want per page
+    page = request.args.get('page', 1, type=int)
+    pages = count // per_page  # this is the number of pages
+    offset = (page - 1) * per_page  # offset for SQL query
+    limit = 20 if page == pages else per_page  # limit for SQL query
+    
+    prev_url = url_for('index', page=page - 1) if page > 1 else None
+    next_url = url_for('index', page=page + 1) if page < pages else None
+    sites = db.execute(sites_request + f' ORDER BY effective_count DESC, sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
 
     if sites:
         sites = [dict(site) for site in sites]
@@ -61,8 +143,7 @@ def index():
                     site['last_contact_date'])
             if site['last_check']:
                 site['last_check'] = json.loads(site['last_check'])
-
-    return render_template('sites/index.html', sites=sites)
+    return render_template('sites/index.html', sites=sites, prev_url=prev_url, next_url=next_url)
 
 
 @bp.route('/add-site', methods=('GET', 'POST'))
@@ -184,6 +265,16 @@ def update(id):
 
         error = None
 
+        site = dict(get_site(id))
+        effective_count = 0
+        if site['seo_data']:
+            site['seo_data'] = json.loads(site['seo_data'])
+        if price:
+            if isinstance(price, str):
+                price = price.replace(',','.')
+            site['price'] = float(price)
+            effective_count = functions.effective_count(site)
+
         db = get_db()
 
         if not url:
@@ -199,9 +290,10 @@ def update(id):
             db.execute(
                 'UPDATE sites SET domain = ?, category_id = ?, notes = ?, published = ?,'
                 'contact_form_link = ?, price = ?, webmaster_id = ?,'
-                'published_link = ?, published = ?, last_contact_date = ?'
+                'published_link = ?, published = ?, last_contact_date = ?, effective_count = ?'
                 'WHERE id = ?', (url, category_id, notes, published, contact_form_link, price,
-                                 webmaster_id, published_link, published, last_contact_date, id)
+                                 webmaster_id, published_link, published, last_contact_date,
+                                 effective_count, id)
             )
             db.commit()
             return redirect(url_for('sites.index'))
@@ -211,7 +303,7 @@ def update(id):
     webmasters = get_db().execute(
         'SELECT * FROM webmasters'
     )
-
+    
     if site:
         site = dict(site)
         if site['seo_data']:
@@ -292,10 +384,11 @@ def contact(id):
         ' WHERE user_id == ?', (str(g.user['id']))
     ).fetchone()
 
+    # Get last 5 contacts from contact_history
     contact_history = get_db().execute(
         'SELECT * FROM contact_history'
-        ' WHERE site_id == ?', (id,)
-    ).fetchall()
+        ' WHERE site_id == ? ORDER BY contact_date DESC', (id,)
+    ).fetchall()[:5]
 
     if pattern:
         pattern = dict(pattern)['patterns']
@@ -329,7 +422,6 @@ def contact(id):
             r'\s((\d{2}.\d{2}.\d{4}.*)|(\w{2},\s\d{1,2}\s\w{2,3}.*)|\w{3,},\s\d{2}.*\d{4}.*)', '', raws['body'])
         return raws
 
-    # TODO: Show mail status
     # TODO: Change mail status with AJAX or something else
 
     mails_send = get_db().execute(

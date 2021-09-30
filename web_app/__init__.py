@@ -9,7 +9,7 @@ from flask import Flask
 
 ABS_CONFIG_PATH = os.path.join(os.path.abspath('.'), 'configs')
 
-# TODO: Create notify of new emails
+# TODO: Create notify of new emails to TG
 # TODO: Create function to stop monitoring publishing on site
 
 

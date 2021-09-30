@@ -21,10 +21,12 @@
 
 <form method="post">
   <div id="app">
-    <h3 class="is-size-5 mb-3">История контактов</h3> 
-    <template>
-      <b-table :data="data" :columns="columns" class="box"></b-table>
-    </template>
+    {%- if contact_history -%}
+      <h3 class="is-size-5 mb-3">История контактов</h3> 
+      <template>
+        <b-table :data="data" :columns="columns" class="box"></b-table>
+      </template>
+    {%- endif -%}
 
     <h3 class="is-size-5 mb-3">Пример письма:</h3> 
     <div class="box" v-if="form_container !== 'mail'">
@@ -105,29 +107,30 @@
 
 {% if mails %}
 <h2 class="is-size-3 mb-5 has-text-centered">Переписка</h2>
-  {% for mail in mails %}
-      <article class="media columns is-mobile">
-        <div class="media-content box column is-10 {% if mail.mail_box == 'SEND' %}is-offset-2{% endif %}">
-          <div class="content">
+<div class="box">
+    {% for mail in mails %}
+        <article class="media columns is-mobile">
+          <div class="media-content column is-10 {% if mail.mail_box == 'SEND' %}is-offset-2{% endif %}">
+            <div class="content">
 
-              <div class="tags has-addons mb-1 is-justify-content-flex-end">
-                <span class="tag is-info"><i class="fas fa-calendar-alt mr-1"></i>{{ mail.mail_date | strftime }}</span>
-                  {% if mail.mail_box == 'INBOX' and mail.status == 0 %}
-                    <b-tooltip class="tag is-success" label="New mails" type="is-dark" size="is-small">
-                      <a href="{{ url_for('mails.mail', id=mail.id) }}" class="has-text-white"><i class="fas fa-reply mr-1"></i>NEW</a>
-                    </b-tooltip>
-                  {% endif %}
-              </div>
+                <div class="tags has-addons mb-1 is-justify-content-flex-end">
+                  <span class="tag is-info"><i class="fas fa-calendar-alt mr-1"></i>{{ mail.mail_date | strftime }}</span>
+                    {% if mail.mail_box == 'INBOX' and mail.status == 0 %}
+                      <b-tooltip class="tag is-success" label="New mails" type="is-dark" size="is-small">
+                        <a href="{{ url_for('mails.mail', id=mail.id) }}" class="has-text-white"><i class="fas fa-reply mr-1"></i>NEW</a>
+                      </b-tooltip>
+                    {% endif %}
+                </div>
 
-              <strong>{{mail.subject}}</strong> <small>{{mail.from_name}}</small> - <small>{{mail.to_name}}</small>        
-              <p>
-                {{mail.body}}
-              </p>
+                <strong>{{mail.subject}}</strong> <small>{{mail.from_name}}</small> - <small>{{mail.to_name}}</small>        
+                <p>
+                  {{mail.body}}
+                </p>
+            </div>
           </div>
-        </div>
-      </article>
-  {% endfor %}
-
+        </article>
+    {% endfor %}
+</div>
 {% endif %}
 
 <script>
