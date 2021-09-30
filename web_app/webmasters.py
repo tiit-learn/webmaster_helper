@@ -71,7 +71,7 @@ def check_error(request_form, update=False):
 def index():
     db = get_db()
     webmasters = db.execute(
-        'SELECT * FROM webmasters ORDER BY id ASC'
+        'SELECT * FROM webmasters ORDER BY id DESC'
     ).fetchall()
     return render_template('webmasters/index.html', webmasters=webmasters)
 
