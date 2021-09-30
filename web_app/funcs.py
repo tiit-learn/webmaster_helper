@@ -125,19 +125,37 @@ def save_mails_to_db(mail_box, mail_date, id_msg, uniq_gen, to_email, from_email
             tries += 1
 
 
-def site_data():
+def site_data(site):
     # Установка флага работы через прокси. 1 - работать с прокси
     os.environ["PROXY_WORK"] = "1"
     db = get_db()
-    sites = db.execute(
-        'SELECT id, domain, seo_data, whois_data FROM sites'
-    ).fetchall()
+
+    if not site:
+        sites = db.execute(
+            'SELECT id, domain, seo_data, whois_data FROM sites'
+        ).fetchall()
+    else:
+        sites =  db.execute(
+            f'SELECT id, domain, seo_data, whois_data FROM sites WHERE domain LIKE "%{site}%"'
+        ).fetchall()
+    
     start = time.perf_counter()
-    try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(get_sites_data(sites))
-    except Exception as err:
-        print('Ошибка в (site_data)', err)
+    sites_iter = iter(sites)
+    num = 0
+    while True:
+        print(f'Обработка (site_data) {num} из {len(sites)}')
+        batch = tuple(itertools.islice(sites_iter, 10))
+        if not batch:
+            break
+        if not ((num + 10) > len(sites)):
+            num += 10
+        else:
+            num = len(sites)
+        try:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(get_sites_data(batch))
+        except Exception as err:
+            print('Ошибка в (site_data)', err)
     end = time.perf_counter()
     print(f'Finished collect site data at {end - start}s')
 
@@ -157,14 +175,25 @@ def get_checking_links():
     # 84600 (1 day)
     pages_list = [page for page in pages_list if not page['last_check'] or (
         time.time() - json.loads(page['last_check'])['date']) > 84600]
-    
+
     if pages_list:
-        try:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(proxy_setup())
-            loop.run_until_complete(check_post(pages_list))
-        except Exception as err:
-            print('Ошибка в (get_checking_links)', err)
+        sites_iter = iter(pages_list)
+        num = 0
+        while True:
+            print(f'Обработка (site_data) {num} из {len(pages_list)}')
+            batch = tuple(itertools.islice(sites_iter, 10))
+            if not batch:
+                break
+            if not ((num + 10) > len(pages_list)):
+                num += 10
+            else:
+                num = len(pages_list)
+            try:
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(proxy_setup())
+                loop.run_until_complete(check_post(batch))
+            except Exception as err:
+                print('Ошибка в (site_data)', err)
     else:
         print('Наличие ссылок уже проверялось.')
 
@@ -177,10 +206,11 @@ def get_mails():
 
 
 @click.command('get-site-data')
+@click.argument('site', required=False)
 @with_appcontext
-def site_data_command():
+def site_data_command(site):
     click.echo('Получение SEO данных для сайтов по РАССПИСАНИЮ')
-    site_data()
+    site_data(site)
 
 
 def get_data_cli(app):
