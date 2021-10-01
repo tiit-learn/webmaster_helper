@@ -140,7 +140,13 @@
             </th>
             <th style="max-width: 150px; overflow-wrap: break-word;">
                 {% if site.whois_data %}
-                    <div class="has-addons"><span class="tag is-warning is-light">{{ site.whois_data.create_date[0] | convert_to_date }}</span><span class="tag is-primary is-light">{{ site.whois_data.create_date[0] | get_date_diff }} д.</span></div>
+                    {%- if site.whois_data.create_date[0] -%}
+                    <div class="has-addons">
+                        <span class="tag is-warning is-light">{{ site.whois_data.create_date[0] | convert_to_date }}</span><span class="tag is-primary is-light">{{ site.whois_data.create_date[0] | get_date_diff }} д.</span>
+                    </div>
+                    {%- else -%}
+                    -
+                    {%- endif -%}
                     <br>    
                     </div>
                         {% for ns in (site.whois_data.name_servers | sort)[:2] %}
