@@ -295,7 +295,7 @@ def update(id):
     webmasters = get_db().execute(
         'SELECT * FROM webmasters'
     )
-    
+
     if site:
         site = dict(site)
         if site['seo_data']:
@@ -343,14 +343,16 @@ def contact(id):
                            f'{int(contact_date)}@mail.yandex.ru', uniq_gen,
                            contact, os.environ.get('MAIL_USER'),
                            title, body)
-
+            db = get_db()
+            if (last_contact_db := db.execute('SELECT last_contact_date FROM sites'
+                ' WHERE id = ?', (id,)).fetchone()):
+                last_contact_status_db = json.loads(last_contact_db['last_contact_date'])['status']
             last_contact_date = json.dumps({
                 'date': contact_date,
-                'status': 'pending'
+                'status': 'pending' if (not last_contact_db or not last_contact_status_db in ['waite_publishing', 'publishing']) else last_contact_status_db
             })
 
             # TODO: Incapsule to some function
-            db = get_db()
             db.execute(
                 'INSERT INTO contact_history (site_id, contact_type,'
                 'contact, contact_text, contact_date)'
