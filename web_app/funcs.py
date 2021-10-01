@@ -138,17 +138,18 @@ def site_data(site):
         sites =  db.execute(
             f'SELECT id, domain, seo_data, whois_data FROM sites WHERE domain LIKE "%{site}%"'
         ).fetchall()
-    
+
     start = time.perf_counter()
     sites_iter = iter(sites)
+    async_count = 3
     num = 0
     while True:
         print(f'Обработка (site_data) {num} из {len(sites)}')
-        batch = tuple(itertools.islice(sites_iter, 10))
+        batch = tuple(itertools.islice(sites_iter, async_count))
         if not batch:
             break
-        if not ((num + 10) > len(sites)):
-            num += 10
+        if not ((num + async_count) > len(sites)):
+            num += async_count
         else:
             num = len(sites)
         try:

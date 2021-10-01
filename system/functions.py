@@ -39,13 +39,15 @@ def get_browser(_async=False):
 
     asession = requests_html.AsyncHTMLSession(
     ) if _async else requests_html.HTMLSession()
-    asession.__browser_args = ['--start-maximized',
-                               '--disable-setuid-sandbox',
-                               '--disable-infobars',
-                               '--window-position=0,0',
-                               '--ignore-certifcate-errors',
-                               '--ignore-certifcate-errors-spki-list',
-                               '--lang=en-EN']
+
+    if _async:
+        asession.__browser_args = ['--start-maximized',
+                                   '--disable-setuid-sandbox',
+                                   '--disable-infobars',
+                                   '--window-position=0,0',
+                                   '--ignore-certifcate-errors',
+                                   '--ignore-certifcate-errors-spki-list',
+                                   '--lang=en-EN']
 
     # headers = {'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     #            'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2919.83 Safari/537.36',
@@ -65,7 +67,6 @@ def get_browser(_async=False):
 
 async def get_pyppe():
     from pyppeteer import launch
-    from pyppeteer_stealth import stealth
 
     proxy = False
     if os.getenv('PROXY_WORK') and os.getenv('PROXIE_DOMAIN'):
@@ -76,7 +77,7 @@ async def get_pyppe():
     browser = await launch({"headless": True,
                             'args': ['' if not proxy else setup_proxy_link,
                                      '--no-sandbox',
-                                     '--single-process',
+                                     #'--single-process',
                                      '--disable-dev-shm-usage',
                                      '--disable-gpu',
                                      '--no-zygote',
@@ -87,6 +88,10 @@ async def get_pyppe():
                                      '--ignore-certifcate-errors',
                                      '--ignore-certifcate-errors-spki-list',
                                      '--lang=en-EN']})
+    return browser
+
+async def get_pyppe_page(browser):
+    from pyppeteer_stealth import stealth
 
     page = await browser.newPage()
     await stealth(page)
@@ -98,10 +103,14 @@ async def get_pyppe():
             'username': os.getenv('PROXIE_USERNAME'),
             'password': os.getenv('PROXIE_PASSWORD')
         })
-    await page.goto('https://google.com')
+
+    # Get ip of Page
+    await page.goto('http://ip-api.com/json/')
+    await page.content()
+    # innerJson = await page.evaluate('() =>  {return JSON.parse(document.querySelector("body").innerText);}');
+    # print(f'IP: [{innerJson["countryCode"]}] {innerJson["query"]}')
 
     return page
-
 
 def check_url(url):
     """
@@ -247,21 +256,22 @@ async def get_seo_data(url_data):
     try:
         from web_app.funcs import save_seo_to_db as save_to_db
 
-        asession = get_browser(_async=True)
         doc = """<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script><a href='https://httpbin.org'>"""
 
         result = json.loads(url_data['seo_data']
                             ) if url_data['seo_data'] else {}
 
         url = url_data['domain']
+        browser = await get_pyppe()
 
         async def get_alexa():
             if not result.get('alexa') or (result.get('alexa') and
                                            (time.time() - result['alexa']['timedata'] > 864000)):
                 try:
+                    asession = get_browser(_async=True)
                     response = await asession.get("https://alexa.com/siteinfo/" + url)
                 except Exception as err:
-                    print('Ошибка %s:' % url, err)
+                    print('Ошибка <Alexa> %s:' % url, err)
                 else:
                     print(response.html.find('title', first=True).text)
                     script = response.html.xpath(
@@ -275,20 +285,53 @@ async def get_seo_data(url_data):
                                 'data': val if val else None, 'timedata': time.time()}
                         except Exception as err:
                             print('Ошибка Alexa %s:' % url, err)
+                        finally:
+                            await html.browser.close()
                     else:
                         result['alexa'] = {
                             'data': None, 'timedata': time.time()}
-                    response.close()
+                finally:
+                    await asession.close()
+
+        async def get_yandex_x():
+            if not result.get('yandex_x') or (result.get('yandex_x') and (time.time() - result['yandex_x']['timedata'] > 864000)):
+                try:
+                    asession =  get_browser(_async=True)
+                    response = await asession.get("https://webmaster.yandex.ru/siteinfo/?site=" + url)
+                except Exception as err:
+                    print('Ошибка <Yandex X> %s:' % url, err)
+                else:
+                    script = response.html.xpath(
+                        '//script[contains(text(),"bh.lib.data")]', first=True)
+                    if script:
+                        print(url, response.html.find(
+                            'title', first=True).text)
+                        script = 'let bh = {}; bh["lib"] = {}; ' + \
+                            script.text + r'; bh.lib.data'
+                        html = requests_html.HTML(html=doc, async_=True)
+                        val = await html.arender(script=script, reload=False)
+                        result['yandex_x'] = {
+                            'data': val, 'timedata': time.time()}
+                        await html.browser.close()
+                    elif "Подтвердите, что запросы отправляли вы, а не робот" in response.html.text:
+                        print(url, 'Yandex - CAPTCHA')
+                    else:
+                        print(url, 'Yandex - NOT FOUND')
+                        result['yandex_x'] = {
+                            'data': None, 'timedata': time.time()}
+                finally:
+                    await asession.close()
 
         async def get_simularweb():
             if not result.get('simularweb') or (result.get('simularweb') and (time.time() - result['simularweb']['timedata'] > 864000)):
                 pattern = r'// lazy loader|//siteInfo: true,'
                 _url = "https://www.similarweb.com/ru/website/" + url
-                page = await get_pyppe()
+                page = await get_pyppe_page(browser)
                 try:
                     await page.goto(_url)
+                    await page.content()
                 except Exception as err:
-                    print('Ошибка %s:' % _url, err)
+                    print('Ошибка <Simularweb> %s:' % _url, err)
                 else:
                     title = await page.title()
                     html = await page.evaluate('document.documentElement.outerHTML', force_expr=True)
@@ -303,27 +346,26 @@ async def get_seo_data(url_data):
                         val = await html.arender(script=script, reload=False)
                         result['simularweb'] = {
                             'data': val, 'timedata': time.time()}
+                        await html.browser.close()
                     elif (script := html.xpath('//div[@class="Title"]', first=True).text) == 'Pardon Our Interruption...':
                         print(url, title, '- CAPTCHA')
                     else:
                         print(url, title, '- NOT FOUND')
                         result['simularweb'] = {
                             'data': None, 'timedata': time.time()}
-                finally:
-                    await page.browser.close()
 
         async def get_moz():
             if not result.get('moz') or (result.get('moz') and (time.time() - result['moz']['timedata'] > 864000)):
 
                 _url = "https://moz.com/domain-analysis?site=" + url
-                page = await get_pyppe()
+                page = await get_pyppe_page(browser)
                 try:
                     await page.goto(_url)
+                    await page.content()
                 except Exception as err:
-                    print('Ошибка %s:' % _url, err)
+                    print('Ошибка <MOZ> %s:' % _url, err)
                 else:
                     title = await page.title()
-                    print(title)
                     html = await page.evaluate('document.documentElement.outerHTML', force_expr=True)
                     html = requests_html.HTML(html=html, async_=True)
                     if html.xpath('//div[contains(@class, "align-items-center")]/div[1]/h1',
@@ -338,45 +380,19 @@ async def get_seo_data(url_data):
                             'spam_score': html.xpath('//div[contains(@class, "align-items-center")]/div[4]/h1',
                                                      first=True).text
                         }
+                        print(title)
                         # await asyncio.sleep(0.5)
                         result['moz'] = {'data': val, 'timedata': time.time()}
                     else:
+                        print(title, '- NOT FOUND')
                         result['moz'] = {'data': None, 'timedata': time.time()}
-                finally:
-                    await page.browser.close()
-
-        async def yandex_x():
-            if not result.get('yandex_x') or (result.get('yandex_x') and (time.time() - result['yandex_x']['timedata'] > 864000)):
-                try:
-                    response = await asession.get("https://webmaster.yandex.ru/siteinfo/?site=" + url)
-                except Exception as err:
-                    print('Ошибка %s:' % url, err)
-                else:
-                    script = response.html.xpath(
-                        '//script[contains(text(),"bh.lib.data")]', first=True)
-                    if script:
-                        print(url, response.html.find(
-                            'title', first=True).text)
-                        script = 'let bh = {}; bh["lib"] = {}; ' + \
-                            script.text + r'; bh.lib.data'
-                        html = requests_html.HTML(html=doc, async_=True)
-                        val = await html.arender(script=script, reload=False)
-                        result['yandex_x'] = {
-                            'data': val, 'timedata': time.time()}
-                    elif "Подтвердите, что запросы отправляли вы, а не робот" in response.html.text:
-                        print(url, 'Yandex - CAPTCHA')
-                    else:
-                        print(url, 'Yandex - NOT FOUND')
-                        result['yandex_x'] = {
-                            'data': None, 'timedata': time.time()}
-                    response.close()
 
         try:
             await asyncio.gather(
                 get_alexa(),
+                get_yandex_x(),
                 get_simularweb(),
                 get_moz(),
-                yandex_x()
             )
             # TODO: Create new function for getting whois data.
             whois_data = await asyncio.get_event_loop().run_in_executor(None, get_whois, url, url_data['whois_data'])
@@ -387,7 +403,8 @@ async def get_seo_data(url_data):
 
     except Exception as err:
         print('ОШИБИЩЕ', err)
-
+    finally:
+        await browser.close()
 
 async def get_sites_data(sites):
     if os.getenv('PROXY_WORK'):
@@ -474,5 +491,5 @@ def effective_count(site_data):
         if (yandex_x := site_data['seo_data'].get('yandex_x', 0)):
             if (yandex_x := yandex_x['data'].get('quality', 0)):
                 yandex_x = yandex_x['achievements'][-1]['sqi']/site_data['price']/10
-    
+
     return ((simularweb + alexa + moz + yandex_x) + ((simularweb + alexa + moz + yandex_x) * simular_search_source))
