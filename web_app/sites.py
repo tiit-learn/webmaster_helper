@@ -346,10 +346,11 @@ def contact(id):
             db = get_db()
             if (last_contact_db := db.execute('SELECT last_contact_date FROM sites'
                 ' WHERE id = ?', (id,)).fetchone()):
-                last_contact_status_db = json.loads(last_contact_db['last_contact_date'])['status']
+                if (contact_date_db := last_contact_db['last_contact_date']):
+                    status = json.loads(contact_date_db)['status']
             last_contact_date = json.dumps({
                 'date': contact_date,
-                'status': 'pending' if (not last_contact_db or not last_contact_status_db in ['waite_publishing', 'publishing']) else last_contact_status_db
+                'status': 'pending' if (not contact_date_db or not status in ['waite_publishing', 'publishing']) else status
             })
 
             # TODO: Incapsule to some function
