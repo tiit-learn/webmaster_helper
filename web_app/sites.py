@@ -112,7 +112,14 @@ def index():
 
     prev_url = url_for('index', page=page - 1) if page > 1 else None
     next_url = url_for('index', page=page + 1) if page < pages else None
-    sites = db.execute(sites_request + f' ORDER BY effective_count DESC, sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
+    if request.args.get('sort') == 'effective_count':
+        sites = db.execute(sites_request + f' ORDER BY effective_count DESC, sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
+    elif request.args.get('sort') == 'publish_date':
+        sites = db.execute(sites_request + f' ORDER BY published DESC LIMIT {limit} OFFSET {offset};').fetchall()
+    else:
+        sites = db.execute(sites_request + f' ORDER BY sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
+
+
 
     if sites:
         sites = [dict(site) for site in sites]
