@@ -44,7 +44,41 @@
                     </p>
                 </div>
         </div>
-        
+        <h2>Реквизиты оплаты</h2> 
+        <div class="field">
+                <div class="field has-addons" v-for="(input,k) in inputs" :key="k">
+                    <p class="control">
+                    <span class="select">
+                        <select v-model="input.payment_type">
+                            <option value='none' disabled>Доступные вырианты:</option>
+                            <option value='umoney'>- Юмани</option>
+                            <option value='qiwi'>- Qiwi</option>
+                            <option value='advcash'>- AdvCash</option>
+                            <option value='payeer'>- Payeer</option>
+                            <option value='webmoney'>WebMoney</option>
+                            <option value='sberbank'>СберБанк</option>
+                            <option value='other'>Другое...</option>
+                        </select>
+                    </span>
+                    </p>
+                    <p class="control is-expanded">
+                        <input class="input" type="text" placeholder="Контактная информация" v-model="input.contact">
+                    </p>
+                    <p class="control">
+                        <a class="button is-danger" @click="remove(k)" v-show="k || ( !k && inputs.length > 1)">
+                            <span class="icon is-small">
+                                <i class="fas fa-times-circle"></i>
+                            </span>
+                        </a>
+                        <a class="button is-success"  @click="add(k)" v-show="k == inputs.length-1">
+                            <span class="icon is-small">
+                                <i class="fas fa-plus-circle"></i>
+                            </span>
+                        </a>
+                    </p>
+                </div>
+        </div>
+
         <div class="field">
             <p class="control">
               <input @click="submit" class="button is-success" type="submit" value="Изменить">
