@@ -457,14 +457,15 @@ async def check_post(pages_list):
     if not os.getenv("WORK_SITE"):
         raise ValueError(
             'Please set the "WORK_SITE" variable in your environment')
-
-    session = await get_pyppe()
+    browser = await get_pyppe()
+    session = await get_pyppe_page(browser)
 
     try:
         coros = [check_post_on_site(site, session) for site in pages_list]
         await asyncio.gather(*coros)
     except Exception as err:
         print('Ошибка в (check_post)', err)
+    await browser.close()
 
 def effective_count(site_data):
     """

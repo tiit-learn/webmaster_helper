@@ -163,8 +163,8 @@
                 {% endif %}
             </th>
             <th>
-                {% if site.price %}
-		    {{ site.effective_count | round}}
+                {% if site.price and site.effective_count %}
+		            {{ site.effective_count | round}}
                 {% else %}
                 -
                 {% endif %}
