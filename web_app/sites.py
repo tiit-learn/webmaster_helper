@@ -62,33 +62,33 @@ def index():
     elif request.args.get('status') == 'not_contact':
         sites_request = '''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id 
-                         WHERE last_contact_date ISNULL''' 
+                         JOIN categories AS cat ON sites.category_id = cat.id
+                         WHERE last_contact_date ISNULL'''
     elif request.args.get('status') == 'can_publish':
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         JOIN categories AS cat ON sites.category_id = cat.id
                          WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link ISNULL"""
     elif request.args.get('status') == 'publishing':
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         JOIN categories AS cat ON sites.category_id = cat.id
                          WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link NOT NULL"""
     elif request.args.get('status') == 'pending':
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         JOIN categories AS cat ON sites.category_id = cat.id
                          WHERE last_contact_date LIKE '%"status": "pending"%'"""
     elif request.args.get('status') == 'waite_publishing':
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         JOIN categories AS cat ON sites.category_id = cat.id
                          WHERE last_contact_date LIKE '%"status": "waite_publishing"%'"""
 
     elif request.args.get('status') == 'bad_condition':
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id 
+                         JOIN categories AS cat ON sites.category_id = cat.id
                          WHERE last_contact_date LIKE '%"status": "bad_condition"%'"""
     else:
         sites_request = '''SELECT * FROM sites LEFT OUTER
@@ -98,7 +98,7 @@ def index():
     if (search := request.args.get('search')):
         sites_request = f'''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
-                         JOIN categories AS cat ON sites.category_id = cat.id WHERE domain LIKE "%{search}%" 
+                         JOIN categories AS cat ON sites.category_id = cat.id WHERE domain LIKE "%{search}%"
                          OR web.webmaster_name LIKE "%{search}%"'''
 
     count = len(sites_request)
