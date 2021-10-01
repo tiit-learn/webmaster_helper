@@ -51,7 +51,6 @@ def db_done():
 def index():
     db = get_db()
     if request.args.get('status') == 'new_mails':
-        count_request = 'SELECT COUNT(*) FROM mails WHERE mail_box == "INBOX" AND status == "0"'
         new_mails = db.execute('SELECT from_name FROM mails WHERE mail_box == "INBOX" AND status == "0"').fetchall()
         all_new_mails = [f'contacts LIKE "%{mail["from_name"]}%"' for mail in new_mails]
         sites_request = '''SELECT * FROM sites LEFT OUTER
@@ -61,63 +60,56 @@ def index():
         # FIXIT: If inbox have 0 mail, raise error with DB query 
         sites_request = sites_request + ' OR '.join(all_new_mails)
     elif request.args.get('status') == 'not_contact':
-        count_request = 'SELECT COUNT(*) FROM sites WHERE last_contact_date ISNULL'
         sites_request = '''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id 
                          WHERE last_contact_date ISNULL''' 
     elif request.args.get('status') == 'can_publish':
-        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link ISNULL"""
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id 
                          WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link ISNULL"""
     elif request.args.get('status') == 'publishing':
-        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link NOT NULL"""
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id 
                          WHERE last_contact_date LIKE '%"status": "publishing"%' AND published_link NOT NULL"""
     elif request.args.get('status') == 'pending':
-        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "pending"%'"""
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id 
                          WHERE last_contact_date LIKE '%"status": "pending"%'"""
     elif request.args.get('status') == 'waite_publishing':
-        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "waite_publishing"%'"""
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id 
                          WHERE last_contact_date LIKE '%"status": "waite_publishing"%'"""
 
     elif request.args.get('status') == 'bad_condition':
-        count_request = """SELECT COUNT(*) FROM sites WHERE last_contact_date LIKE '%"status": "bad_condition"%'"""
         sites_request = """SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id 
                          WHERE last_contact_date LIKE '%"status": "bad_condition"%'"""
     else:
-        count_request = 'SELECT COUNT(*) FROM sites'
         sites_request = '''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id'''
-    
+
     if (search := request.args.get('search')):
-        count_request = f'SELECT COUNT(*) FROM sites WHERE domain LIKE "%{search}%"'
         sites_request = f'''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id WHERE domain LIKE "%{search}%" 
                          OR web.webmaster_name LIKE "%{search}%"'''
- 
-    count = db.execute(count_request).fetchone()['COUNT(*)']
 
+    count = len(sites_request)
+
+    # Paggination implementation
     per_page = 10  # define how many results you want per page
     page = request.args.get('page', 1, type=int)
     pages = count // per_page  # this is the number of pages
     offset = (page - 1) * per_page  # offset for SQL query
     limit = 20 if page == pages else per_page  # limit for SQL query
-    
+
     prev_url = url_for('index', page=page - 1) if page > 1 else None
     next_url = url_for('index', page=page + 1) if page < pages else None
     sites = db.execute(sites_request + f' ORDER BY effective_count DESC, sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
