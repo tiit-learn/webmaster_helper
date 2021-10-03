@@ -175,7 +175,7 @@ def get_checking_links():
     # Get all page_list who have't check date and last check date older then
     # 84600 (1 day)
     pages_list = [page for page in pages_list if not page['last_check'] or (
-        time.time() - json.loads(page['last_check'])['date']) > 84600]
+        time.time() - json.loads(page['last_check'])['date']) > 846000]
 
     if pages_list:
         sites_iter = iter(pages_list)
