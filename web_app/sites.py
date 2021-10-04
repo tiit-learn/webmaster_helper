@@ -52,12 +52,11 @@ def index():
     db = get_db()
     if request.args.get('status') == 'new_mails':
         new_mails = db.execute('SELECT from_name FROM mails WHERE mail_box == "INBOX" AND status == "0"').fetchall()
-        all_new_mails = [f'contacts LIKE "%{mail["from_name"]}%"' for mail in new_mails]
+        all_new_mails = [f'contacts LIKE "%{mail["from_name"]}%"' for mail in new_mails] if len(new_mails) > 0 else ['contact LIKE "%NO MAILS%"']
         sites_request = '''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id WHERE '''
         # TODO: Find some better idei for get all new mails from site webmaster
-        # FIXIT: If inbox have 0 mail, raise error with DB query 
         sites_request = sites_request + ' OR '.join(all_new_mails)
     elif request.args.get('status') == 'not_contact':
         sites_request = '''SELECT * FROM sites LEFT OUTER
@@ -118,8 +117,6 @@ def index():
         sites = db.execute(sites_request + f' ORDER BY published DESC LIMIT {limit} OFFSET {offset};').fetchall()
     else:
         sites = db.execute(sites_request + f' ORDER BY sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
-
-
 
     if sites:
         sites = [dict(site) for site in sites]
