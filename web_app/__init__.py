@@ -90,7 +90,11 @@ def create_app(test_config=None):
     @environmentfilter
     def _jinja2_filter_to_json(_, string):
         if string:
-            return sorted(json.loads(string), key=lambda x: x['contact_type'])
+            if 'contact' in string:
+                data = 'contact'
+            elif 'payment' in string:
+                data = 'payment'
+            return sorted(json.loads(string), key=lambda x: x[f'{data}_type']) 
         return string
 
     FILTERS["strftime"] = _jinja2_filter_datetime

@@ -26,7 +26,8 @@
             <thead>
                 <tr>
                     <th>Имя вебмастера</th>
-                    <th style="min-width: 200px;">Контакты</th>
+                    <th style="min-width: 150px;">Реквизиты</th>
+                    <th style="min-width: 100px;">Контакты</th>
                     <th>Количество сайтов</th>
                     <th>Последний контакт</th>
                     {% if g.user %}
@@ -42,6 +43,17 @@
                         {{ webmaster.webmaster_name }}
                     </th>
                     <th>
+                        {% if webmaster.payments %}
+                        <ul>
+                            {% for element in webmaster.payments|to_json %}
+                                <li>{{ element.payment_type }}: {{ element.payment }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </th>
+                    <th>
                         {% if webmaster.contacts %}
                         <ul>
                             {% for element in webmaster.contacts|to_json %}
@@ -55,18 +67,18 @@
                     <th>-</th>
                     <th>-</th>
                     {% if g.user %}
-                    <th>
-                        <a href="#" class="button is-warning">
+                    <th style="min-width: 110px; overflow-wrap: break-word;" >
+                        <a href="#" class="tag is-warning">
                             <span class="icon">
                                 <i class="fas fa-paper-plane"></i>
                             </span>
                         </a>
-                        <a href="{{ url_for('webmasters.update', id=webmaster.id) }}" class="button is-primary is-light">
+                        <a href="{{ url_for('webmasters.update', id=webmaster.id) }}" class="tag is-primary is-light">
                             <span class="icon">
                                 <i class="fas fa-edit"></i>
                             </span>
                         </a>
-                        <a href="{{ url_for('webmasters.delete', id=webmaster.id) }}" class="button is-danger" onclick="return confirm('Удалить вебмастера: {{ webmaster.webmaster_name }}?')">
+                        <a href="{{ url_for('webmasters.delete', id=webmaster.id) }}" class="tag is-danger" onclick="return confirm('Удалить вебмастера: {{ webmaster.webmaster_name }}?')">
                             <span class="icon">
                                 <i class="fas fa-trash-alt"></i>
                             </span>

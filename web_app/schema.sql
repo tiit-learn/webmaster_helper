@@ -28,7 +28,8 @@ CREATE TABLE sites (
 CREATE TABLE webmasters (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     webmaster_name TEXT,
-    contacts TEXT
+    contacts TEXT,
+    payments TEXT
 );
 
 CREATE TABLE mails (

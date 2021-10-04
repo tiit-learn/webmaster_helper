@@ -20,7 +20,6 @@ def normalize_contact(contact_list):
                 r'http(s)?:\/\/(www\.)?', '', contact['contact'])
     return json.dumps(contact_list)
 
-
 def get_webmaster(id):
     webmaster = get_db().execute(
         'SELECT * FROM webmasters WHERE id == ?', (id,)
@@ -66,7 +65,8 @@ def check_error(request_form, update=False):
 
     return error
 
-
+# TODO: Delete DataTable
+# TODO: Replace jQuery to Vue(buefy)
 @bp.route('/')
 def index():
     db = get_db()
@@ -76,23 +76,21 @@ def index():
     return render_template('webmasters/index.html', webmasters=webmasters)
 
 
-# TODO: Replace jQuery to Vue(buefy)
 @bp.route('/add', methods=('POST', 'GET'))
 @login_required
 def add():
     if request.method == "POST":
         db = get_db()
-
         webmaster_name = request.form['webmaster_name']
         contacts = normalize_contact(request.form['contact_info'])
+        payments = request.form['payment_info']
         error = check_error(request.form)
-
         if error:
             flash(error)
         else:
             db.execute(
-                'INSERT INTO webmasters (webmaster_name, contacts)'
-                'VALUES(?, ?)', (webmaster_name, contacts)
+                'INSERT INTO webmasters (webmaster_name, contacts, payments)'
+                'VALUES(?, ?, ?)', (webmaster_name, contacts, payments)
             )
             db.commit()
             return redirect(url_for('webmasters.index'))
@@ -107,14 +105,14 @@ def update(id):
     if request.method == 'POST':
         webmaster_name = request.form['webmaster_name']
         contacts = normalize_contact(request.form['contact_info'])
+        payments = request.form['payment_info']
         error = check_error(request.form, update=webmaster['webmaster_name'])
-
         if error:
             flash(error)
         else:
             db.execute(
-                'UPDATE webmasters SET webmaster_name=?, contacts=?'
-                'WHERE id = ?', (webmaster_name, contacts, id)
+                'UPDATE webmasters SET webmaster_name=?, contacts=?, payments=?'
+                'WHERE id = ?', (webmaster_name, contacts, payments, id)
             )
             db.commit()
             return redirect(url_for('webmasters.index'))

@@ -10,6 +10,7 @@
             </p>
         </div>
 
+        <h4 class="subtitle is-4">Данные для связи</h4> 
         <div class="field is-hidden	">
             <input class="input" name="contact_info" type="text" value='Контактная информация'>
         </div>
@@ -31,12 +32,12 @@
                         <input class="input" type="text" placeholder="Контактная информация" v-model="input.contact">
                     </p>
                     <p class="control">
-                        <a class="button is-danger" @click="remove(k)" v-show="k || ( !k && inputs.length > 1)">
+                        <a class="button is-danger" @click="remove_contact(k)" v-show="k || ( !k && inputs.length > 1)">
                             <span class="icon is-small">
                                 <i class="fas fa-times-circle"></i>
                             </span>
                         </a>
-                        <a class="button is-success"  @click="add(k)" v-show="k == inputs.length-1">
+                        <a class="button is-success"  @click="add_contact()" v-show="k == inputs.length-1">
                             <span class="icon is-small">
                                 <i class="fas fa-plus-circle"></i>
                             </span>
@@ -44,12 +45,17 @@
                     </p>
                 </div>
         </div>
-        <h2>Реквизиты оплаты</h2> 
+        
+        <h4 class="subtitle is-4">Реквизиты оплаты</h4> 
+        <div class="field is-hidden	">
+            <input class="input" name="payment_info" type="text" value='Финансовая информация'>
+        </div>
+
         <div class="field">
-                <div class="field has-addons" v-for="(input,k) in inputs" :key="k">
+                <div class="field has-addons" v-for="(payment,k) in payments" :key="k">
                     <p class="control">
                     <span class="select">
-                        <select v-model="input.payment_type">
+                        <select v-model="payment.payment_type">
                             <option value='none' disabled>Доступные вырианты:</option>
                             <option value='umoney'>- Юмани</option>
                             <option value='qiwi'>- Qiwi</option>
@@ -62,15 +68,15 @@
                     </span>
                     </p>
                     <p class="control is-expanded">
-                        <input class="input" type="text" placeholder="Контактная информация" v-model="input.contact">
+                        <input class="input" type="text" placeholder="Финансовая информация" v-model="payment.payment">
                     </p>
                     <p class="control">
-                        <a class="button is-danger" @click="remove(k)" v-show="k || ( !k && inputs.length > 1)">
+                        <a class="button is-danger" @click="remove_payment(k)" v-show="k || ( !k && payments.length > 1)">
                             <span class="icon is-small">
                                 <i class="fas fa-times-circle"></i>
                             </span>
                         </a>
-                        <a class="button is-success"  @click="add(k)" v-show="k == inputs.length-1">
+                        <a class="button is-success"  @click="add_payment(k)" v-show="k == payments.length-1">
                             <span class="icon is-small">
                                 <i class="fas fa-plus-circle"></i>
                             </span>
@@ -101,38 +107,65 @@ new Vue({
 
   data: {
       inputs: [
-      {%- if not webmaster.contacts -%}
-      {
-        contact: '',
-        contact_type: 'none'
-      }
-      {%- else -%}
-      
-        {%- for element in webmaster.contacts|to_json -%}
-        {
-            contact: '{{element.contact}}',
-            contact_type: '{{element.contact_type}}'
-        },
-        {%- endfor -%}
-      {%- endif -%}
-      ]
+                  {%- if not webmaster.contacts -%}
+                  {
+                    contact: '',
+                    contact_type: 'none'
+                  }
+                  {%- else -%}
+                    {%- for element in webmaster.contacts | to_json -%}
+                    {
+                        contact: '{{element.contact}}',
+                        contact_type: '{{element.contact_type}}'
+                    },
+                    {%- endfor -%}
+                  {%- endif -%}
+          ],
+      payments: [
+              {%- if not webmaster.payments -%}
+              {
+                      payment: '',
+                      payment_type: 'none'
+                  }
+              {%- else -%}
+                {%- for element in webmaster.payments | to_json -%}
+                    {
+                        payment: '{{element.payment}}',
+                        payment_type: '{{element.payment_type}}'
+                        }, 
+                {%- endfor -%}
+              {%- endif -%}
+          ]
     },
 
   methods: {
-    add () {
+    add_contact () {
       this.inputs.push({
         contact: '',
         contact_type: 'none'
       })
     },
 
-    remove (index) {
+    remove_contact (index) {
       this.inputs.splice(index, 1)
+    },
+
+    add_payment () {
+      this.payments.push({
+        payment: '',
+        payment_type: 'none'
+      })
+    },
+
+    remove_payment (index) {
+      this.payments.splice(index, 1)
     },
 
     submit() {
         const data = this.inputs;
+        const payment = this.payments;
         document.getElementsByName('contact_info')[0].value = JSON.stringify(data, null, 2);
+        document.getElementsByName('payment_info')[0].value = JSON.stringify(payment, null, 2);
     }
   }
 })
