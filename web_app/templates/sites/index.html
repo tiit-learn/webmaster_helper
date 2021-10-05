@@ -292,10 +292,35 @@
         {% endfor %}
     </tbody>
 </table>
-    <nav class="pagination is-normal" role="navigation" aria-label="pagination">
-	    <a class="pagination-next" href="{{ next_url }}{%- if request.args.search -%}&search={{ request.args.search  }}{%- endif -%}{%- if request.args.status -%}&status={{ request.args.status  }}{%- endif -%}" {%- if not next_url -%}disabled{%- endif -%}>Следующая<i>→</i></a>
+    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+	    <a class="pagination-next" href="{{ page.next_url }}" {%- if not page.next_url -%}disabled{%- endif -%}>Следующая</a>
 	
-        <a class="pagination-previous" href="{{ prev_url }}{%- if request.args.search -%}&search={{ request.args.search  }}{%- endif -%}{%- if request.args.status -%}&status={{ request.args.status  }}{%- endif -%}" {%- if not prev_url -%}disabled{%- endif -%}><i>←</i>Предыдущая</a>
+        <a class="pagination-previous" href="{{ page.prev_url }}" {%- if not page.prev_url -%}disabled{%- endif -%}>Предыдущая</a>
+        <ul class="pagination-list">
+            {%- if page.first_url -%}
+            <li><a class="pagination-link" href="{{page.first_url}}" aria-label="Goto page {{ page.first }}">{{ page.first }}</a></li>
+            {%- if page.current - 3 > 0 -%}
+            <li><span class="pagination-ellipsis">&hellip;</span></li>
+            {% endif %}
+            {%- endif -%}
+            
+            {%- if page.prev_url -%}
+            <li><a class="pagination-link" href="{{ page.prev_url }}" aria-label="Goto page {{ page.current - 1  }}">{{ page.current - 1  }}</a></li>
+            {%- endif -%}
+
+            <li><a class="pagination-link is-current" href="{{ page.current }}" aria-label="Page 46" aria-current="page">{{ page.current }}</a></li>
+            
+            {%- if page.next_url -%}
+            <li><a class="pagination-link" href="{{ page.next_url }}"aria-label="Goto page {{ page.current + 1 }}">{{ page.current + 1 }}</a></li>
+            {%- endif -%}
+            
+            {%- if page.last_url -%}
+            {%- if page.current + 2 < page.last -%}
+            <li><span class="pagination-ellipsis">&hellip;</span></li>
+            {%- endif -%}
+            <li><a class="pagination-link" href="{{ page.last_url }}"  aria-label="Goto page {{ page.last }}">{{ page.last }}</a></li>
+            {%- endif -%}
+        </ul>
     </nav>
 </div>
 {% else %}

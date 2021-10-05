@@ -48,7 +48,8 @@ def db_done():
 
 
 @bp.route('/')
-def index():
+def index(page=1):
+    print('URL Args:', request.args)
     db = get_db()
     if request.args.get('status') == 'new_mails':
         new_mails = db.execute('SELECT from_name FROM mails WHERE mail_box == "INBOX" AND status == "0"').fetchall()
@@ -109,8 +110,20 @@ def index():
     offset = (page - 1) * per_page  # offset for SQL query
     limit = 20 if page == pages else per_page  # limit for SQL query
 
-    prev_url = url_for('index', page=page - 1) if page > 1 else None
-    next_url = url_for('index', page=page + 1) if page < pages else None
+    page = {
+            'current': page,
+            'first': 1,
+            'last': pages,
+            'prev_url': url_for('index', page=page - 1) if page > 1 else None,
+            'next_url': url_for('index', page=page + 1) if page < pages else None,
+            'first_url': url_for('index', page=1) if (page-2) >= 1 else None,
+            'last_url': url_for('index', page=pages) if (page+2) <= pages else None
+            }
+    if (arguments := request.args):
+        arguments = ''.join([f'&{str(arg_key)}={str(arg_value)}' if arg_key != 'page' else '' for arg_key, arg_value in arguments.items()])
+        page = {key: (str(value)+arguments) if key not in ['current', 'first', 'last'] and value else value for key, value in page.items()}
+
+    # Sorting query
     if request.args.get('sort') == 'effective_count':
         sites = db.execute(sites_request + f' ORDER BY effective_count DESC, sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
     elif request.args.get('sort') == 'publish_date':
@@ -139,7 +152,7 @@ def index():
                     site['last_contact_date'])
             if site['last_check']:
                 site['last_check'] = json.loads(site['last_check'])
-    return render_template('sites/index.html', sites=sites, prev_url=prev_url, next_url=next_url)
+    return render_template('sites/index.html', sites=sites, page=page, arguments=arguments)
 
 
 @bp.route('/add-site', methods=('GET', 'POST'))
