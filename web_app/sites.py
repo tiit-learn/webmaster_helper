@@ -17,6 +17,8 @@ from web_app.categories import get_category_id
 
 bp = Blueprint('sites', __name__)
 
+def get_count_rows(query):
+    return len(get_db().execute(query).fetchall())
 
 def get_site(id):
     site = get_db().execute(
@@ -53,7 +55,7 @@ def index(page=1):
     db = get_db()
     if request.args.get('status') == 'new_mails':
         new_mails = db.execute('SELECT from_name FROM mails WHERE mail_box == "INBOX" AND status == "0"').fetchall()
-        all_new_mails = [f'contacts LIKE "%{mail["from_name"]}%"' for mail in new_mails] if len(new_mails) > 0 else ['contact LIKE "%NO MAILS%"']
+        all_new_mails = [f'contacts LIKE "%{mail["from_name"]}%"' for mail in new_mails] if len(new_mails) > 0 else ['contacts LIKE "%NO MAILS%"']
         sites_request = '''SELECT * FROM sites LEFT OUTER
                          JOIN webmasters AS web ON sites.webmaster_id = web.id LEFT OUTER
                          JOIN categories AS cat ON sites.category_id = cat.id WHERE '''
@@ -101,7 +103,7 @@ def index(page=1):
                          JOIN categories AS cat ON sites.category_id = cat.id WHERE domain LIKE "%{search}%"
                          OR web.webmaster_name LIKE "%{search}%"'''
 
-    count = len(sites_request)
+    count = get_count_rows(sites_request)
 
     # Paggination implementation
     per_page = 10  # define how many results you want per page
