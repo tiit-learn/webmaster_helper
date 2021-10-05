@@ -60,9 +60,9 @@
             <th>Метрики</th>
             <th>Whois</th>
             <th>Стоим.</th>
-            <th>Эфф.</th>
-            <th>Дата публикации</th>
-            <th>Дата контакта</th>
+            <th><a href="/?sort=effective_count{{ arguments }}">Эфф.</a></th>
+            <th><a href="/?sort=publish_date{{ arguments }}">Дата публикации</a></th>
+            <th><a href="/?sort=last_contact_date{{ arguments }}">Дата контакта</a></th>
             {% if g.user %}
             <th>Действия</th>
             {% endif %}

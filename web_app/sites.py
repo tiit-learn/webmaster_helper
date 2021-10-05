@@ -121,15 +121,19 @@ def index(page=1):
             'first_url': url_for('index', page=1) if (page-2) >= 1 else None,
             'last_url': url_for('index', page=pages) if (page+2) <= pages else None
             }
-    if (arguments := request.args):
+    if (arguments := request.args) and request.args.keys():
         arguments = ''.join([f'&{str(arg_key)}={str(arg_value)}' if arg_key != 'page' else '' for arg_key, arg_value in arguments.items()])
         page = {key: (str(value)+arguments) if key not in ['current', 'first', 'last'] and value else value for key, value in page.items()}
+    else:
+        arguments = ''
 
     # Sorting query
     if request.args.get('sort') == 'effective_count':
         sites = db.execute(sites_request + f' ORDER BY effective_count DESC, sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
     elif request.args.get('sort') == 'publish_date':
         sites = db.execute(sites_request + f' ORDER BY published DESC LIMIT {limit} OFFSET {offset};').fetchall()
+    elif request.args.get('sort') == 'last_contact_date':
+        sites = db.execute(sites_request + f' ORDER BY last_contact_date DESC LIMIT {limit} OFFSET {offset};').fetchall()
     else:
         sites = db.execute(sites_request + f' ORDER BY sites.id DESC LIMIT {limit} OFFSET {offset};').fetchall()
 
