@@ -1,73 +1,6 @@
 {% block site_form %}
-<script>
-    $(function () {
-      var availableCategories = [
-        {% for category in categories %}
-              "{{category.name}}",
-        {% endfor %}
-      ];
-        $("#category").autocomplete({
-        source: availableCategories,
-        minLength: 0
-        }).focus(function(){            
-                $(this).data("autocomplete").search($(this).val());
-            });
-    });
-  
-    $(function () {
-      var availableWebmasters = [
-        {% for webmaster in webmasters%}
-              "{{webmaster.webmaster_name}}",
-        {% endfor %}
-      ];
-    $("#webmaster").autocomplete({
-      source: availableWebmasters,
-      minLength: 0
-    }).focus(function(){            
-                $(this).data("autocomplete").search($(this).val());
-            });
-    } );
-  
-    $( function() {
-      $( "#datepicker" ).datepicker( { 
-          dateFormat: "dd/mm/yy",
-          beforeShow: function() {
-            setTimeout(function(){
-                $('.ui-datepicker').css('z-index', 9999);
-            }, 0);
-        }
-        } );
-        $( "#datepicker_contact" ).datepicker( { 
-          dateFormat: "dd/mm/yy",
-          beforeShow: function() {
-            setTimeout(function(){
-                $('.ui-datepicker').css('z-index', 9999);
-            }, 0);
-        }
-        } );
-    } );
-  
-    function check_condition() {
-      if (document.getElementById('published_done').checked) {
-        document.getElementById('published_link').style.display = 'block';
-        document.getElementById('published_date').style.display = 'block';
-      } else {
-        document.getElementById('published_link').style.display = 'none';
-        document.getElementById('published_date').style.display = 'none';
-      }
-
-      if (document.getElementById('last_contact_status').checked) {
-        document.getElementById('contact_date').style.display = 'block';
-        document.getElementById('contact_status').style.display = 'inline-block';
-      } else {
-        document.getElementById('contact_date').style.display = 'none';
-        document.getElementById('contact_status').style.display = 'none';
-      }
-      
-    };
-  </script>
-  
-  <form method="post">
+ 
+  <form method="post" name="formid" id="formid">
   
     <div class="field">
       <p class="control has-icons-left has-icons-right">
@@ -198,5 +131,80 @@
     </div>
   
   </form>
+<script>
+    var input = document.createElement('input');//prepare a new input DOM element
+
+    input.setAttribute('name', 'referer');//set the param name
+    input.setAttribute('value', document.referrer);//set the value
+    input.setAttribute('type', 'hidden')//set the type, like "hidden" or other
+
+    document.forms.formid.appendChild(input);//append the input to the form
+
+    $(function () {
+      var availableCategories = [
+        {% for category in categories %}
+              "{{category.name}}",
+        {% endfor %}
+      ];
+        $("#category").autocomplete({
+        source: availableCategories,
+        minLength: 0
+        }).focus(function(){            
+                $(this).data("autocomplete").search($(this).val());
+            });
+    });
+  
+    $(function () {
+      var availableWebmasters = [
+        {% for webmaster in webmasters%}
+              "{{webmaster.webmaster_name}}",
+        {% endfor %}
+      ];
+    $("#webmaster").autocomplete({
+      source: availableWebmasters,
+      minLength: 0
+    }).focus(function(){            
+                $(this).data("autocomplete").search($(this).val());
+            });
+    } );
+  
+    $( function() {
+      $( "#datepicker" ).datepicker( { 
+          dateFormat: "dd/mm/yy",
+          beforeShow: function() {
+            setTimeout(function(){
+                $('.ui-datepicker').css('z-index', 9999);
+            }, 0);
+        }
+        } );
+        $( "#datepicker_contact" ).datepicker( { 
+          dateFormat: "dd/mm/yy",
+          beforeShow: function() {
+            setTimeout(function(){
+                $('.ui-datepicker').css('z-index', 9999);
+            }, 0);
+        }
+        } );
+    } );
+  
+    function check_condition() {
+      if (document.getElementById('published_done').checked) {
+        document.getElementById('published_link').style.display = 'block';
+        document.getElementById('published_date').style.display = 'block';
+      } else {
+        document.getElementById('published_link').style.display = 'none';
+        document.getElementById('published_date').style.display = 'none';
+      }
+
+      if (document.getElementById('last_contact_status').checked) {
+        document.getElementById('contact_date').style.display = 'block';
+        document.getElementById('contact_status').style.display = 'inline-block';
+      } else {
+        document.getElementById('contact_date').style.display = 'none';
+        document.getElementById('contact_status').style.display = 'none';
+      }
+      
+    };
   </script>
+ 
   {% endblock %}

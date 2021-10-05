@@ -4,7 +4,7 @@ import re
 
 from datetime import datetime
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for, session
 )
 
 from werkzeug.exceptions import abort
@@ -221,9 +221,8 @@ def add_site():
 def update(id):
 
     site = get_site(id)
-
     if request.method == 'POST':
-
+        print('Referer:', request.form.get('referer'))
         if request.form['published'] == '1' and request.form['published_date']:
             published = datetime.strptime(
                 request.form['published_date'], r'%d/%m/%Y').timestamp()
@@ -292,7 +291,7 @@ def update(id):
                                  effective_count, id)
             )
             db.commit()
-            return redirect(url_for('sites.index'))
+            return redirect(request.form.get('referer'))
     categories = get_db().execute(
         'SELECT * FROM categories'
     )
