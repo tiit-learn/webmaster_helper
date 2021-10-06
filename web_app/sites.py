@@ -1,10 +1,9 @@
-import json
 import time
 import re
 
 from datetime import datetime
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for, session
+    Blueprint, json, flash, g, redirect, render_template, request, url_for, session
 )
 
 from werkzeug.exceptions import abort
@@ -241,14 +240,16 @@ def update(id):
 
     site = get_site(id)
     if request.method == 'POST':
+        print(request.form)
         print('Referer:', request.form.get('referer'))
-        if request.form['published'] == '1' and request.form['published_date']:
+        if request.form.get('published') and request.form['published_date']:
             published = datetime.strptime(
                 request.form['published_date'], r'%d/%m/%Y').timestamp()
-        elif request.form['published'] == '1' and not request.form['published_date']:
+        elif request.form.get('published') and not request.form['published_date']:
             published = time.time()
         else:
             published = None
+
 
         url = functions.remove_http(request.form['url'])
         category = request.form['category'].strip()
@@ -258,7 +259,7 @@ def update(id):
         price = request.form['price'] if request.form['price'] != 'None' else None
         notes = request.form['notes'] if request.form['notes'] != 'None' else None
         published_link = functions.remove_http(
-            request.form['published_link']) if request.form['published'] == '1' else None
+            request.form['published_link']) if request.form.get('published') else None
         webmaster_name = request.form['webmaster'] if request.form['webmaster'] else None
         webmaster_id = get_webmaster_id(
             request.form['webmaster'].strip()) if webmaster_name else None
@@ -313,10 +314,10 @@ def update(id):
             return redirect(request.form.get('referer'))
     categories = get_db().execute(
         'SELECT * FROM categories'
-    )
+    ).fetchall()
     webmasters = get_db().execute(
         'SELECT * FROM webmasters'
-    )
+    ).fetchall()
 
     if site:
         site = dict(site)
