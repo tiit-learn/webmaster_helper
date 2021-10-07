@@ -1,28 +1,28 @@
 {% block site_form %}
- 
-<div id="app">
-  <form method="post" name="formid" id="formid">
-  
-    <b-field class="field">
-        <b-input placeholder="URL"
-            name="url"
-            icon-pack="fas"
-            icon="link"
-            value="{{ request.form['url'] or site['domain'] }}">
-        </b-input>
-    </b-field>
 
-    <b-field class="field">
-        <b-input placeholder="Ссылка на форму контакта"
-            name="contact_form_link"
-            icon-pack="fas"
-            icon="share-square"
-            value="{{ request.form['contact_form_link'] or site['contact_form_link']}}">
-        </b-input>
-    </b-field>
-    
-    <section class="field">
-        <b-autocomplete
+<div id="app">
+    <form method="post" name="formid" id="formid">
+
+        <b-field class="field">
+            <b-input placeholder="URL"
+                     name="url"
+                     icon-pack="fas"
+                     icon="link"
+                     value="{{ request.form['url'] or site['domain'] }}">
+            </b-input>
+        </b-field>
+
+        <b-field class="field">
+            <b-input placeholder="Ссылка на форму контакта"
+                     name="contact_form_link"
+                     icon-pack="fas"
+                     icon="share-square"
+                     value="{{ request.form['contact_form_link'] or site['contact_form_link']}}">
+            </b-input>
+        </b-field>
+
+        <section class="field">
+            <b-autocomplete
                 v-model="category_name"
                 ref="autocomplete"
                 :data="filteredCategoriesArray"
@@ -32,12 +32,12 @@
                 icon="grip-vertical"
                 name="category"
                 @select="option => selected = option">
-            <template #empty>Не найдено "[[category_name]]"</template>
+                <template #empty>Не найдено "[[category_name]]"</template>
             </b-autocomplete>
-    </section>
+        </section>
 
-    <section class="field">
-        <b-autocomplete
+        <section class="field">
+            <b-autocomplete
                 v-model="webmaster_name"
                 ref="autocomplete"
                 :data="filteredWebmastersArray"
@@ -47,161 +47,204 @@
                 icon="asterisk"
                 name="webmaster"
                 @select="option => selected = option">
-            <template #empty>Не найдено "[[webmaster_name]]"</template>
+                <template #empty>Не найдено "[[webmaster_name]]"</template>
             </b-autocomplete>
-    </section>
+        </section>
 
-    <b-field class="field">
-        <b-input placeholder="Стоимость размещения статьи"
-            name="price"
-            icon-pack="fas"
-            icon="dollar-sign"
-            value="{{ request.form['price'] or site['price'] }}">
-        </b-input>
-    </b-field>
-
-    <b-field>
-        <b-switch :value="true"
-            v-model="published"
-            name="published"
-            type="is-info">
-            Размещение
-        </b-switch>
-    </b-field>
-
-    <b-field label="Name" v-if="published">
-        <b-input value="Kevin Garvey"></b-input>
-    </b-field>
-    
-      
-    <div class="field" id="published_date" style="{% if not site.published %}display:none{% endif %}">
-      <p class="control has-icons-left has-icons-right">
-        <input class="input" placeholder="Дата размещения" name="published_date" id="datepicker" value="{%- if site['published'] -%}
-                                                                                                        {{ site.published | strftime }}
-                                                                                                        {%- endif -%}">
-        <span class="icon is-small is-left">
-          <i class="fas fa-calendar-alt"></i>
-        </span>
-      </p>
-    </div>
-  
-    <div class="field" id="published_link" {% if not site.published %}style="display:none"{% endif %}>
-      <p class="control has-icons-left has-icons-right">
-        <input class="input" placeholder="Страница размещения" name="published_link"  value="{%- if request.form['published_link'] or site['published_link'] -%}
-                                                                                             {{ request.form['published_link'] or site['published_link'] }}
-                                                                                             {%- endif -%}">
-        <span class="icon is-small is-left">
-          <i class="fas fa-anchor"></i>
-        </span>
-      </p>
-    </div>
-
-    <div class="field">
-        <div class="control">
-          <label class="radio">
-            <input type="radio" name="last_contact_status" id="last_contact_status" value=1 {% if site.last_contact_date %}checked{% endif %}>
-            Связался
-          </label>
-          <label class="radio">
-            <input type="radio" name="last_contact_status" value=0 {% if not site.last_contact_date %}checked{% endif %}>
-            Не связался
-          </label>
-        </div>
-    </div>
-
-    <div class="field" id="contact_date" style="{% if not site.last_contact_date %}display:none{% endif %}">
-        <p class="control has-icons-left has-icons-right">
-          <input class="input" placeholder="Дата контакта" name="contact_date" id="datepicker_contact" value="{%- if site['last_contact_date'] -%}
-                                                                                                          {{ site.last_contact_date.date | strftime }}
-                                                                                                          {%- endif -%}">
-          <span class="icon is-small is-left">
-            <i class="fas fa-calendar-alt"></i>
-          </span>
-        </p>
-    </div>
-
-    <div class="field select" id="contact_status" style="{% if not site.last_contact_date %}display:none{% endif %}">
-      <select name="contact_status">
-        <option value="pending" {% if site.last_contact_date.status == 'pending' %}selected{% endif %}>Ожидаю ответ</option>
-        <option value="waite_publishing" {% if site.last_contact_date.status == 'waite_publishing' %}selected{% endif %}>Ожидаю размещения</option>
-        <option value="publishing" {% if site.last_contact_date.status == 'publishing' %}selected{% endif %}>Размещает</option>
-        <option value="bad_condition" {% if site.last_contact_date.status == 'bad_condition' %}selected{% endif %}>Плохие условия</option>
-        <option value="not_publishing" {% if site.last_contact_date.status == 'not_publishing' %}selected{% endif %}>Не размещает</option>
-      </select>
-    </div>
-
-    <section>
-        <b-field>
-            <b-switch name="pay" type="is-success" :native-value='true'>Оплата</b-switch>
+        <b-field class="field">
+            <b-input placeholder="Стоимость размещения статьи"
+                     name="price"
+                     icon-pack="fas"
+                     icon="dollar-sign"
+                     value="{{ request.form['price'] or site['price'] }}">
+            </b-input>
         </b-field>
-    </section>
-    <hr>
-    <div class="field">
-      <div class="control">
-        <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] or site['notes']}}</textarea>
-      </div>
-    </div>
+        <hr>
 
-    <div class="field">
-      <p class="control">
-        <input class="button is-success" type="submit" value="Изменить">
-      </p>
-    </div>
+        <div class="columns is-desktop">
 
-  </form>
+            <div class="column">
+                <section class="mb-3">
+                    <b-field>
+                        <b-switch :value="true"
+                         v-model="contacted"
+                         name="last_contact_status"
+                         :native-value='true'
+                         type="is-info">
+                            Связь с вебмастером
+                        </b-switch>
+                    </b-field>
+
+                    <section v-if="contacted" class="box">
+
+                        <b-field label="Выбор даты контакта">
+                            <b-datepicker
+                                v-model="selected_contact_date"
+                                name="contact_date"
+                                placeholder="Дата cвязи с вебмастером..."
+                                :date-formatter="dateFormatter"
+                                icon-pack="fas"
+                                icon="calendar-alt"
+                                :icon-right="selected_contact_date ? 'close-circle' : ''"
+                                icon-right-clickable
+                                @icon-right-click="clearContactedDate()"
+                                trap-focus>
+                            </b-datepicker>
+                        </b-field>
+                        
+                        <b-field label="Статус контакта">
+                            <b-select placeholder="Выберите статус" name="contact_status" v-model="default_contact_status">
+                                <option
+                                    v-for="option in contact_status"
+                                    :value="option.id"
+                                    :key="option.id">
+                                [[ option.value ]]
+                                </option>
+                            </b-select>
+                        </b-field>
+
+                    </section>
+                </section>
+            </div>
+
+            <div class="column">
+                <section class="mb-3">
+                    <b-field>
+                        <b-switch :value="true"
+                         v-model="published"
+                         name="published"
+                         :native-value='true'
+                         type="is-info">
+                            Размещение
+                        </b-switch>
+                    </b-field>
+
+                    <section v-if="published" class="box">
+
+                        <b-field label="Выбор даты публикации">
+                            <b-datepicker
+                                v-model="selected_date"
+                                name="published_date"
+                                placeholder="Дата размещения..."
+                                :date-formatter="dateFormatter"
+                                icon-pack="fas"
+                                icon="calendar-alt"
+                                :icon-right="selected_date ? 'close-circle' : ''"
+                                icon-right-clickable
+                                @icon-right-click="clearPublishedDate()"
+                                trap-focus>
+                            </b-datepicker>
+                        </b-field>
+
+                        <b-field label="Страница размещения">
+                            <b-input placeholder="Страница размещения"
+                                     name="published_link"
+                                     icon-pack="fas"
+                                     icon="anchor"
+                                     value="{%- if site['published_link'] != None-%}{{ request.form['published_link'] or site['published_link'] }}{%- endif -%}">
+                            </b-input>
+                        </b-field>
+                    </section>
+                </section>
+            </div>
+
+            
+
+            <div class="column">
+                <b-field>
+                    <b-switch name="pay" type="is-success" :native-value='true'>Оплата</b-switch>
+                </b-field>
+
+            </div>
+        </div>
+        <hr>
+        <div class="field">
+            <div class="control">
+                <textarea class="textarea" placeholder="Заметки о сайте" name="notes" id="notes">{{ request.form['notes'] or site['notes']}}</textarea>
+            </div>
+        </div>
+
+        <div class="field">
+            <p class="control">
+            <input class="button is-success" type="submit" value="Изменить">
+            </p>
+        </div>
+
+    </form>
 </div>
 
 <script>
     var input = document.createElement('input');//prepare a new input DOM element
-
     input.setAttribute('name', 'referer');//set the param name
     input.setAttribute('value', document.referrer);//set the value
     input.setAttribute('type', 'hidden')//set the type, like "hidden" or other
-
     document.forms.formid.appendChild(input);//append the input to the form
-    
+
     const example = {
-        data() {
-            return {
-                categories: [
-                            {%- for category in categories  -%}
-                                "{{category.name}}",
-                            {%- endfor -%}],
-                category_name: "{{ request.form['category'] or site['name']}}",
-                webmasters: [
-                            {%- for webmaster in webmasters  -%}
-                                "{{webmaster.webmaster_name}}",
-                            {%- endfor -%}],
-                webmaster_name: "{%- if request.form['webmaster'] or site['webmaster_name'] -%}{{ request.form['webmaster'] or site['webmaster_name'] }}{%- endif -%}",
-                selected: null,
-                selectOutside: false,
-                published: {%- if site.published -%}true{%- else -%}false{%- endif -%}
-            }
-        },
+            data() {
+                    return {
+                            categories: [
+                                    {%- for category in categories  -%}
+                                    "{{category.name}}",
+                                    {%- endfor -%}],
+                            category_name: "{{ request.form['category'] or site['name']}}",
+                            webmasters: [
+                                    {%- for webmaster in webmasters  -%}
+                                    "{{webmaster.webmaster_name}}",
+                                    {%- endfor -%}],
+                            webmaster_name: "{%- if request.form['webmaster'] or site['webmaster_name'] -%}{{ request.form['webmaster'] or site['webmaster_name'] }}{%- endif -%}",
+                            selected: null,
+                            selectOutside: false,
+                            published: {%- if site.published -%}true{%- else -%}false{%- endif -%},
+                            selected_date: new Date({%- if site.published -%}{{ site.published }} * 1000{%- else -%}{%- endif -%}),
+                            published_link: "",
+                            contacted: {%- if site.last_contact_date -%}true{%- else -%}false{%- endif -%},
+                            selected_contact_date: new Date({%- if site.last_contact_date -%}{{ site.last_contact_date['date'] }} * 1000{%- else -%}{%- endif -%}),
+                            default_contact_status: {%- if site.last_contact_date.status -%}'{{site.last_contact_date.status}}'{%- else -%}null{%- endif -%},
+                            contact_status: [
+                                    {'id': 'pending', 'value': 'Ожидаю ответ'},
+                                    {'id': 'waite_publishing', 'value': 'Ожидаю размещения'},
+                                    {'id': 'publishing', 'value': 'Размещает'},
+                                    {'id': 'bad_condition', 'value': 'Плохие условия'},
+                                    {'id': 'not_publishing', 'value': 'Не размещает'},
+                                ],
+                        }
+                },
             computed: {
-            filteredCategoriesArray() {
-                return this.categories.filter((option) => {
-                    return option
-                    .toString()
-                    .toLowerCase()
-                    .indexOf(this.category_name.toLowerCase()) >= 0
-                })
-            },
-            filteredWebmastersArray() {
-                return this.webmasters.filter((option) => {
-                    return option
-                    .toString()
-                    .toLowerCase()
-                    .indexOf(this.webmaster_name.toLowerCase()) >= 0
-                })
-            }
-        },
-            delimiters: ["[[","]]"]
+                    filteredCategoriesArray() {
+                            return this.categories.filter((option) => {
+                                    return option
+                                        .toString()
+                                        .toLowerCase()
+                                        .indexOf(this.category_name.toLowerCase()) >= 0
+                                })
+                        },
+                    filteredWebmastersArray() {
+                            return this.webmasters.filter((option) => {
+                                    return option
+                                        .toString()
+                                        .toLowerCase()
+                                        .indexOf(this.webmaster_name.toLowerCase()) >= 0
+                                })
+                        }
+                },
+            delimiters: ["[[","]]"],
+            methods: {
+                    clearPublishedDate () {
+                            this.selected_date = null
+                        },
+                    clearContactedDate () {
+                            this.selected_contact_date = null
+                        },
+                    dateFormatter(data){
+                            return data.toLocaleDateString('en-GB', 'DD/MM/YYYY');
+                        },
+                }
         }
 
     const app = new Vue(example)
     app.$mount('#app')
 
 </script>
- 
-  {% endblock %}
+
+{% endblock %}

@@ -242,6 +242,7 @@ def update(id):
     if request.method == 'POST':
         print(request.form)
         print('Referer:', request.form.get('referer'))
+
         if request.form.get('published') and request.form['published_date']:
             published = datetime.strptime(
                 request.form['published_date'], r'%d/%m/%Y').timestamp()
@@ -249,8 +250,8 @@ def update(id):
             published = time.time()
         else:
             published = None
-
-
+        published_link = functions.remove_http(
+            request.form['published_link']) if request.form.get('published') else None
         url = functions.remove_http(request.form['url'])
         category = request.form['category'].strip()
         category_id = get_category_id(category)
@@ -258,16 +259,14 @@ def update(id):
             request.form['contact_form_link'])
         price = request.form['price'] if request.form['price'] != 'None' else None
         notes = request.form['notes'] if request.form['notes'] != 'None' else None
-        published_link = functions.remove_http(
-            request.form['published_link']) if request.form.get('published') else None
         webmaster_name = request.form['webmaster'] if request.form['webmaster'] else None
         webmaster_id = get_webmaster_id(
             request.form['webmaster'].strip()) if webmaster_name else None
 
-        if request.form['last_contact_status'] == '1' and request.form['contact_date']:
+        if request.form['last_contact_status'] == 'true' and request.form['contact_date']:
             last_contact_date = datetime.strptime(
                 request.form['contact_date'], r'%d/%m/%Y').timestamp()
-        elif request.form['last_contact_status'] == '1' and not request.form['contact_date']:
+        elif request.form['last_contact_status'] == 'true' and not request.form['contact_date']:
             last_contact_date = time.time()
         else:
             last_contact_date = None
