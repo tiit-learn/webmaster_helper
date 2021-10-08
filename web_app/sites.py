@@ -30,6 +30,25 @@ def get_site(id):
         abort(404, f'Site {id} not found.')
     return site
 
+def get_payments(id):
+    db = get_db()
+    payments = db.execute('SELECT * FROM payments WHERE site_id == ?', (id,)).fetchall()
+    if payments is None:
+        abort(404, f'Site {id} not found.')
+    return payments
+
+def save_payments(information):
+    db = get_db()
+    db.execute( 'INSERT INTO payments (site_id, payment_type, '
+                'payment_address, payment_date, payment_count) '
+                'VALUES (?, ?, ?, ?, ?)',
+                (information['site_id'],
+                    information['payment_type'],
+                    information['payment_address'],
+                    information['payment_date'],
+                    information['payment_count'])
+            )
+    db.commit()
 
 @bp.route('/temp')
 def db_done():
@@ -231,7 +250,7 @@ def add_site():
     webmasters = get_db().execute(
         'SELECT * FROM webmasters'
     )
-    return render_template('sites/add_site.html', site={'last_contact_date': None}, categories=categories, webmasters=webmasters)
+    return render_template('sites/add_site.html', site={'last_contact_date': None, 'webmaster_id': None}, categories=categories, webmasters=webmasters)
 
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
@@ -310,14 +329,25 @@ def update(id):
                                  effective_count, id)
             )
             db.commit()
-            return redirect(request.form.get('referer'))
+
+        data_form = request.form.to_dict()
+        if (data_form.get('payment_type') and data_form.get('payment_count')):
+            information = {
+                    'site_id': id,
+                    'payment_type': data_form['payment_type'],
+                    'payment_address': data_form['payment_address'],
+                    'payment_date': datetime.now().timestamp(),
+                    'payment_count': data_form['payment_count']
+                    }
+            save_payments(information)
+
+        return redirect(request.form.get('referer'))
     categories = get_db().execute(
         'SELECT * FROM categories'
     ).fetchall()
     webmasters = get_db().execute(
         'SELECT * FROM webmasters'
     ).fetchall()
-
     if site:
         site = dict(site)
         if site['seo_data']:
@@ -326,6 +356,9 @@ def update(id):
             site['whois_data'] = json.loads(site['whois_data'])
         if site['last_contact_date']:
             site['last_contact_date'] = json.loads(site['last_contact_date'])
+        if site['payments']:
+            site['payments'] = json.loads(site['payments'])
+            site['transactions'] = get_payments(id)
     return render_template('sites/update.html', site=site,
                            categories=categories,
                            webmasters=webmasters)

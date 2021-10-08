@@ -76,4 +76,14 @@ CREATE TABLE contact_history (
     FOREIGN KEY (site_id) REFERENCES sites (id)
 );
 
+CREATE TABLE payments (
+    payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    site_id INTEGER NOT NULL,
+    payment_type TEXT NOT NULL,
+    payment_address TEXT NOT NULL,
+    payment_date TEXT NOT NULL,
+    payment_count INTEGER NOT NULL,
+    FOREIGN KEY (site_id) REFERENCES site (id)
+);
+
 INSERT INTO categories VALUES(0, '');

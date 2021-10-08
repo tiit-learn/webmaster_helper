@@ -2,63 +2,70 @@
 
 <div id="app">
     <form method="post" name="formid" id="formid">
+        <section class="box">
+            <div class="columns is-desktop">
+                <div class="column">
+            <b-field class="field">
+                <b-input placeholder="URL"
+                         name="url"
+                         icon-pack="fas"
+                         icon="link"
+                         value="{{ request.form['url'] or site['domain'] }}">
+                </b-input>
+            </b-field>
 
-        <b-field class="field">
-            <b-input placeholder="URL"
-                     name="url"
-                     icon-pack="fas"
-                     icon="link"
-                     value="{{ request.form['url'] or site['domain'] }}">
-            </b-input>
-        </b-field>
+            <b-field class="field">
+                <b-input placeholder="Ссылка на форму контакта"
+                         name="contact_form_link"
+                         icon-pack="fas"
+                         icon="share-square"
+                         value="{{ request.form['contact_form_link'] or site['contact_form_link']}}">
+                </b-input>
+            </b-field>
 
-        <b-field class="field">
-            <b-input placeholder="Ссылка на форму контакта"
-                     name="contact_form_link"
-                     icon-pack="fas"
-                     icon="share-square"
-                     value="{{ request.form['contact_form_link'] or site['contact_form_link']}}">
-            </b-input>
-        </b-field>
+            <section class="field">
+                <b-autocomplete
+                    v-model="category_name"
+                    ref="autocomplete"
+                    :data="filteredCategoriesArray"
+                    :select-on-click-outside="selectOutside"
+                    placeholder="Категория"
+                    icon-pack="fas"
+                    icon="grip-vertical"
+                    name="category"
+                    @select="option => selected = option">
+                    <template #empty>Не найдено "[[category_name]]"</template>
+                </b-autocomplete>
+            </section>
+            </div>
 
-        <section class="field">
-            <b-autocomplete
-                v-model="category_name"
-                ref="autocomplete"
-                :data="filteredCategoriesArray"
-                :select-on-click-outside="selectOutside"
-                placeholder="Категория"
-                icon-pack="fas"
-                icon="grip-vertical"
-                name="category"
-                @select="option => selected = option">
-                <template #empty>Не найдено "[[category_name]]"</template>
-            </b-autocomplete>
+            <div class="column">
+            <section class="field">
+                <b-autocomplete
+                    v-model="webmaster_name"
+                    ref="autocomplete"
+                    :data="filteredWebmastersArray"
+                    :select-on-click-outside="selectOutside"
+                    placeholder="Вебмастер"
+                    icon-pack="fas"
+                    icon="asterisk"
+                    name="webmaster"
+                    @select="option => selected = option">
+                    <template #empty>Не найдено "[[webmaster_name]]"</template>
+                </b-autocomplete>
+            </section>
+
+            <b-field class="field">
+                <b-input placeholder="Стоимость размещения статьи"
+                         name="price"
+                         icon-pack="fas"
+                         icon="dollar-sign"
+                         value="{{ request.form['price'] or site['price'] }}">
+                </b-input>
+            </b-field>
+            </div>
+            </div>
         </section>
-
-        <section class="field">
-            <b-autocomplete
-                v-model="webmaster_name"
-                ref="autocomplete"
-                :data="filteredWebmastersArray"
-                :select-on-click-outside="selectOutside"
-                placeholder="Вебмастер"
-                icon-pack="fas"
-                icon="asterisk"
-                name="webmaster"
-                @select="option => selected = option">
-                <template #empty>Не найдено "[[webmaster_name]]"</template>
-            </b-autocomplete>
-        </section>
-
-        <b-field class="field">
-            <b-input placeholder="Стоимость размещения статьи"
-                     name="price"
-                     icon-pack="fas"
-                     icon="dollar-sign"
-                     value="{{ request.form['price'] or site['price'] }}">
-            </b-input>
-        </b-field>
         <hr>
 
         <div class="columns is-desktop">
@@ -66,11 +73,11 @@
             <div class="column">
                 <section class="mb-3">
                     <b-field>
-                        <b-switch :value="true"
-                         v-model="contacted"
-                         name="last_contact_status"
-                         :native-value='true'
-                         type="is-info">
+                        <b-switch
+                            v-model="contacted"
+                            name="last_contact_status"
+                            :native-value='true'
+                            type="is-info">
                             Связь с вебмастером
                         </b-switch>
                     </b-field>
@@ -91,7 +98,7 @@
                                 trap-focus>
                             </b-datepicker>
                         </b-field>
-                        
+
                         <b-field label="Статус контакта">
                             <b-select placeholder="Выберите статус" name="contact_status" v-model="default_contact_status">
                                 <option
@@ -110,11 +117,11 @@
             <div class="column">
                 <section class="mb-3">
                     <b-field>
-                        <b-switch :value="true"
-                         v-model="published"
-                         name="published"
-                         :native-value='true'
-                         type="is-info">
+                        <b-switch
+                            v-model="published"
+                            name="published"
+                            :native-value='true'
+                            type="is-info">
                             Размещение
                         </b-switch>
                     </b-field>
@@ -147,15 +154,60 @@
                     </section>
                 </section>
             </div>
-
-            
-
+            {%- if site.webmaster_id -%}
             <div class="column">
                 <b-field>
-                    <b-switch name="pay" type="is-success" :native-value='true'>Оплата</b-switch>
+                    <b-switch
+                        v-model="payed"
+                        name="payment_status"
+                        :native-value='true'
+                        type="is-success">
+                        Оплата</b-switch>
                 </b-field>
 
+                <section v-if="payed" class="box">
+                    <b-field label="Реквизиты для оплаты">
+                        <b-dropdown
+                            v-model="paymentSelect"
+                            aria-role="list">
+
+                            <template #trigger>
+                                <b-button
+                                    :label="paymentSelect.value"
+                                    type="is-primary"
+                                    icon-pack="fas"
+                                    icon-right="sort-down">
+                                </b-button>
+                            </template>
+
+                            <b-dropdown-item
+                                v-for="(payment, index) in payments"
+                                :key="index"
+                                :value="payment"
+                                aria-role="listitem">
+                                <div class="media">
+                                    <b-icon pack="fas" class="media-left" icon="money-check-alt"></b-icon>
+                                    <div class="media-content">
+                                        <h3>[[payment.value]]</h3>
+                                        <small>[[payment.key]]</small>
+                                    </div>
+                                </div>
+                            </b-dropdown-item>
+
+                        </b-dropdown>
+                        <b-input type="hidden" placeholder="Способ оплаты" name="payment_type" :value="paymentSelect.value"></b-input>
+                        <b-input type="hidden" placeholder="Номер кошелека" name="payment_address" :value="paymentSelect.key"></b-input>
+                        <b-input type="number" placeholder="0,00" name="payment_count"></b-input>
+
+                    </b-field>
+                    <a href={{url_for('webmasters.update', id=site.webmaster_id)}}><small>Add new</small></a>
+                    <hr>
+                    {%- for payment in site.transactions-%}
+                    <p>[{{ payment.payment_date | strftime }}] {{payment.payment_type}} (<small>{{payment.payment_address}}</small>) ${{payment.payment_count}}</p>
+                    {%- endfor -%}
+                </section>
             </div>
+            {%- endif -%}
         </div>
         <hr>
         <div class="field">
@@ -207,6 +259,13 @@
                                     {'id': 'publishing', 'value': 'Размещает'},
                                     {'id': 'bad_condition', 'value': 'Плохие условия'},
                                     {'id': 'not_publishing', 'value': 'Не размещает'},
+                                ],
+                            payed: {%-if site.transactions-%}true{%-else-%}false{%-endif-%},
+                            paymentSelect: {'key': null, 'value': 'Выбор оплаты'},
+                            payments: [
+                                    {%-for element in site.payments-%}
+                                    {'key':'{{element.payment}}', 'value':'{{element.payment_type}}'},   
+                                    {%-endfor-%}
                                 ],
                         }
                 },
