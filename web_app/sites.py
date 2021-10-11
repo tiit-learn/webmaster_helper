@@ -292,7 +292,7 @@ def update(id):
         last_contact_date_status = request.form['contact_status'] if last_contact_date else None
         last_contact_date = json.dumps({
             'date': last_contact_date,
-            'status': last_contact_date_status
+            'status': last_contact_date_status if not request.form.get('published') else 'publishing'
         }) if last_contact_date else None
 
         error = None
@@ -306,7 +306,6 @@ def update(id):
                 price = price.replace(',','.')
             site['price'] = float(price)
             effective_count = functions.effective_count(site)
-
         db = get_db()
 
         if not url:
@@ -315,7 +314,6 @@ def update(id):
             error = 'Category is require.'
         elif db.execute('SELECT domain FROM sites WHERE domain=? AND id != ?', (url, id)).fetchone():
             error = f'This site ({url.upper()}) already exist.'
-
         if error is not None:
             flash(error)
         else:

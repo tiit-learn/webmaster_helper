@@ -197,7 +197,7 @@
                         </b-dropdown>
                         <b-input type="hidden" placeholder="Способ оплаты" name="payment_type" :value="paymentSelect.value"></b-input>
                         <b-input type="hidden" placeholder="Номер кошелека" name="payment_address" :value="paymentSelect.key"></b-input>
-                        <b-input type="number" placeholder="0,00" name="payment_count"></b-input>
+                        <b-input type="number" step=0.01 placeholder="0,00" name="payment_count"></b-input>
 
                     </b-field>
                     <a href={{url_for('webmasters.update', id=site.webmaster_id)}}><small>Add new</small></a>
