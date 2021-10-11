@@ -281,10 +281,10 @@ def update(id):
         webmaster_id = get_webmaster_id(
             request.form['webmaster'].strip()) if webmaster_name else None
 
-        if request.form['last_contact_status'] == 'true' and request.form['contact_date']:
+        if request.form.get('last_contact_status') and request.form['contact_date']:
             last_contact_date = datetime.strptime(
                 request.form['contact_date'], r'%d/%m/%Y').timestamp()
-        elif request.form['last_contact_status'] == 'true' and not request.form['contact_date']:
+        elif request.form.get('last_contact_status') and not request.form['contact_date']:
             last_contact_date = time.time()
         else:
             last_contact_date = None
@@ -358,6 +358,9 @@ def update(id):
         if site['payments']:
             site['payments'] = json.loads(site['payments'])
             site['transactions'] = get_payments(id)
+        else:
+            site['payments'] = []
+            site['transactions'] = []
     return render_template('sites/update.html', site=site,
                            categories=categories,
                            webmasters=webmasters)
