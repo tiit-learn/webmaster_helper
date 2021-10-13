@@ -47,17 +47,30 @@ def save_to_db_check_post(id, check_data):
             tries += 1
 
 
-def save_seo_to_db(id, site_data, whois_data):
+def save_seo_to_db(id, seo_data):
     tries = 0
     db = get_db()
     while tries < 5:
         try:
             db.execute(
-                'UPDATE sites SET seo_data = ? WHERE id = ?', (json.dumps(site_data),
+                'UPDATE sites SET seo_data = ? WHERE id = ?', (json.dumps(seo_data),
                                                                id)
             )
-            if whois_data:
-                db.execute(
+        except Exception as err:
+            print('Ошибка БД:', err)
+            time.sleep(random.randint(1, 5))
+        else:
+            db.commit()
+            break
+        finally:
+            tries += 1
+
+def save_whois_to_db(id, whois_data):
+    tries = 0
+    db = get_db()
+    while tries < 5:
+        try:
+            db.execute(
                     'UPDATE sites SET whois_data = ? WHERE id = ?', (json.dumps(whois_data),
                                                                      id)
                 )
@@ -69,6 +82,7 @@ def save_seo_to_db(id, site_data, whois_data):
             break
         finally:
             tries += 1
+
 
 
 def get_count_emails(status, box):
@@ -141,7 +155,7 @@ def site_data(site):
 
     start = time.perf_counter()
     sites_iter = iter(sites)
-    async_count = 3
+    async_count = 10 
     num = 0
     while True:
         print(f'Обработка (site_data) {num} из {len(sites)}')
