@@ -285,6 +285,11 @@
                         <i class="fas fa-trash-alt"></i>
                     </span>
                 </a>
+                <span class="tag is-primary" onclick="get_seo_data({{ site.id }})">
+                    <span class="icon">
+                        <i class="fas fa-sync"></i>
+                    </span>
+                </span>
             </th>
             {% endif %}
         </tr>
@@ -327,6 +332,12 @@
 <h2>Not found</h2>
 {% endif %}
 <script>
+    function get_seo_data(id) {
+            fetch(`/${id}/get_seo_data`)
+                .then(response => response.json())
+                .then(result => console.log(result))
+        }
+
     const app = new Vue(
 	{
 		data(){

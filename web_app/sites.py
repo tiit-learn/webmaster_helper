@@ -1,3 +1,5 @@
+import asyncio
+import os
 import time
 import re
 
@@ -494,3 +496,26 @@ def contact(id):
                            mails_send=mails_send,
                            mails_received=mails_received,
                            mails=mails)
+
+@bp.route('/<int:id>/get_seo_data')
+@login_required
+def get_seo_data(id):
+    os.environ["PROXY_WORK"] = "1"
+    db = get_db()
+
+    sites = db.execute(
+            'SELECT id, domain, seo_data, whois_data FROM sites WHERE id == ?',
+            (id,)
+        ).fetchall()
+    start = time.perf_counter()
+    if sites:
+       try:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(functions.get_sites_data(sites))
+       except Exception as err:
+            print('Ошибка в (get_seo_data 1111)', err)
+    end = time.perf_counter()
+    print(f'Finished collect site data at {end - start}s')
+
+
+    return json.dumps({'status': 200, 'msg': f'All good {id}'})
