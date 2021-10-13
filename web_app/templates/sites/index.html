@@ -113,8 +113,8 @@
             <th style="min-width: 130px; overflow-wrap: break-word;">
                 {% if site.seo_data %}
                     <ul>                    
-                        {% if site.seo_data.simularweb and site.seo_data.simularweb.data %}<li class="is-size-7">Simularweb GR: {{similarweb}}</li>{% endif %}
-                        {% if site.seo_data.alexa and site.seo_data.alexa.data %}<li class="is-size-7">Alexa GR: {{alexa}}</li>{% endif %}
+                        {% if site.seo_data.simularweb and site.seo_data.simularweb.data.GlobalRank %}<li class="is-size-7">Simularweb GR: {{site.seo_data.simularweb.data.GlobalRank[0]}}</li>{% endif %}
+                        {% if site.seo_data.alexa and site.seo_data.alexa.data.rank.global %}<li class="is-size-7">Alexa GR: {{site.seo_data.alexa.data.rank.global}}</li>{% endif %}
                         {% if site.seo_data.moz and site.seo_data.moz.data %}<li class="is-size-7">MOZ DA: {{site.seo_data.moz.data.da}}</li>{% endif %}
                         {% if site.seo_data.yandex_x and site.seo_data.yandex_x.data.quality%}<li class="is-size-7">Яндекс ИКС: {{site.seo_data.yandex_x.data.quality.achievements[-1].sqi}}</li>{% endif %}
                     </ul>
