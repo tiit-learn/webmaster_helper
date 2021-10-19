@@ -21,6 +21,16 @@ def index():
     ).fetchall()
     return render_template('mails/index.html', mails=mails)
 
+@bp.route('/new')
+def new_mails():
+    db = get_db()
+    mails = db.execute(
+        'SELECT * FROM mails'
+        ' WHERE mail_box == "INBOX" AND status == 0 ORDER BY mail_date DESC;'
+    ).fetchall()
+    return render_template('mails/index.html', mails=mails)
+
+
 
 @login_required
 @bp.route('<int:id>')
