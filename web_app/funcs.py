@@ -155,7 +155,7 @@ def site_data(site):
 
     start = time.perf_counter()
     sites_iter = iter(sites)
-    async_count = 10 
+    async_count = 3 
     num = 0
     while True:
         print(f'Обработка (site_data) {num} из {len(sites)}')
